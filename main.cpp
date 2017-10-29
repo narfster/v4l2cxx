@@ -17,7 +17,7 @@ int main() {
 
     util_v4l2_b::init_mmap(fd);
 
-    util_v4l2_b::start_capturing(fd);
+    util_v4l2::start_capturing(fd,4);
 
     util_v4l2_b::mainloop(fd);
 

@@ -438,29 +438,7 @@ namespace util_v4l2_b {
         }
     }
 
-    static void start_capturing(int fd) {
-        unsigned int i;
-        enum v4l2_buf_type type;
 
-
-        for (i = 0; i < n_buffers; ++i) {
-            struct v4l2_buffer buf;
-
-            CLEAR(buf);
-            buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-            buf.memory = V4L2_MEMORY_MMAP;
-            buf.index = i;
-
-            if (-1 == util_v4l2::xioctl(fd, VIDIOC_QBUF, &buf)) {
-                printf("ERROR: start_capturing VIDIOC_QBUF");
-            }
-
-        }
-        type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        if (-1 == util_v4l2::xioctl(fd, VIDIOC_STREAMON, &type))
-            printf("ERROR: start_capturing VIDIOC_STREAMON");
-
-    }
 
     static void process_image(const void *p, int size)
     {

@@ -19,6 +19,8 @@
 #include <cerrno>
 #include <iostream>
 
+#define UTIL_CLEAR(x) memset(&(x), 0, sizeof(x))
+
 enum class pixel_format{
     V4L2CXX_PIX_FMT_RGB332 = V4L2_PIX_FMT_RGB332,
     V4L2CXX_PIX_FMT_YVYU = V4L2_PIX_FMT_YVYU
@@ -118,6 +120,30 @@ namespace util_v4l2{
             fmt.index++;
         }
         return formats;
+    }
+
+    static void start_capturing(int fd, int numOfBuffers) {
+        unsigned int i;
+        enum v4l2_buf_type type;
+
+
+        for (i = 0; i < numOfBuffers; ++i) {
+            struct v4l2_buffer buf;
+
+            UTIL_CLEAR(buf);
+            buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+            buf.memory = V4L2_MEMORY_MMAP;
+            buf.index = i;
+
+            if (-1 == util_v4l2::xioctl(fd, VIDIOC_QBUF, &buf)) {
+                printf("ERROR: start_capturing VIDIOC_QBUF");
+            }
+
+        }
+        type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        if (-1 == util_v4l2::xioctl(fd, VIDIOC_STREAMON, &type))
+            printf("ERROR: start_capturing VIDIOC_STREAMON");
+
     }
 
 
