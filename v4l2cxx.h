@@ -48,7 +48,7 @@ struct buffer *buffers;
 static unsigned int n_buffers;
 
 
-namespace util_v4l2 {
+namespace util_v4l2_b {
 
 
 
@@ -372,65 +372,12 @@ namespace util_v4l2 {
         }
     }
 
-    int open_device(std::string device_node) {
-
-        int fd;
-
-        fd = open(device_node.c_str(), O_RDWR);
-        if (fd == -1) {
-            // couldn't find capture device
-            perror("Opening Video device");
-            return -1;
-        }
-
-        return fd;
-
-    }
 
 
-    int query_capabilites(int fd) {
 
-        struct v4l2_capability caps;
-        if (-1 == util_v4l2_a::xioctl(fd, VIDIOC_QUERYCAP, &caps)) {
-            perror("Querying Capabilites");
-            return 1;
-        }
 
-//        printf("cap 0x %x \n", caps.capabilities);
-//
-//        auto tmp = caps.capabilities;
-//
-//        if (caps.device_caps & V4L2_CAP_VIDEO_CAPTURE) {
-//            std::cout << "V4L2_CAP_VIDEO_CAPTURE" << std::endl;
-//        }
-//        if (caps.device_caps & V4L2_CAP_VIDEO_OUTPUT) {
-//            std::cout << "V4L2_CAP_VIDEO_OUTPUT" << std::endl;
-//        }
-//        if (caps.device_caps & V4L2_CAP_STREAMING) {
-//            std::cout << "V4L2_CAP_STREAMING" << std::endl;
-//        }
 
-        return 0;
-    }
 
-    std::vector<v4l2_fmtdesc> query_formats(int fd) {
-
-        std::vector<v4l2_fmtdesc> formats;
-        struct v4l2_fmtdesc fmt;
-        fmt.index = 0;
-        fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-
-        while (-1 != util_v4l2_a::xioctl(fd, VIDIOC_ENUM_FMT, &fmt)) {
-
-            struct v4l2_fmtdesc fmt2;
-            fmt2.index = 0;
-            fmt2.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-            util_v4l2_a::xioctl(fd, VIDIOC_ENUM_FMT, &fmt2);
-            formats.push_back(fmt2);
-            fmt.index++;
-        }
-        return formats;
-    }
 
 
 
@@ -444,7 +391,7 @@ namespace util_v4l2 {
         req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         req.memory = V4L2_MEMORY_MMAP;
 
-        if (-1 == util_v4l2_a::xioctl(fd, VIDIOC_REQBUFS, &req)) {
+        if (-1 == util_v4l2::xioctl(fd, VIDIOC_REQBUFS, &req)) {
             if (EINVAL == errno) {
                 printf("ERROR does not support memory mapping\n");
                 exit(EXIT_FAILURE);
@@ -474,7 +421,7 @@ namespace util_v4l2 {
             buf.memory = V4L2_MEMORY_MMAP;
             buf.index = n_buffers;
 
-            if (-1 == util_v4l2_a::xioctl(fd, VIDIOC_QUERYBUF, &buf))
+            if (-1 == util_v4l2::xioctl(fd, VIDIOC_QUERYBUF, &buf))
                 printf("ERROR: VIDIOC_QUERYBUF");
 
             buffers[n_buffers].length = buf.length;
@@ -504,13 +451,13 @@ namespace util_v4l2 {
             buf.memory = V4L2_MEMORY_MMAP;
             buf.index = i;
 
-            if (-1 == util_v4l2_a::xioctl(fd, VIDIOC_QBUF, &buf)) {
+            if (-1 == util_v4l2::xioctl(fd, VIDIOC_QBUF, &buf)) {
                 printf("ERROR: start_capturing VIDIOC_QBUF");
             }
 
         }
         type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        if (-1 == util_v4l2_a::xioctl(fd, VIDIOC_STREAMON, &type))
+        if (-1 == util_v4l2::xioctl(fd, VIDIOC_STREAMON, &type))
             printf("ERROR: start_capturing VIDIOC_STREAMON");
 
     }
@@ -552,7 +499,7 @@ namespace util_v4l2 {
         buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         buf.memory = V4L2_MEMORY_MMAP;
 
-        if (-1 == util_v4l2_a::xioctl(fd, VIDIOC_DQBUF, &buf)) {
+        if (-1 == util_v4l2::xioctl(fd, VIDIOC_DQBUF, &buf)) {
             switch (errno) {
                 case EAGAIN:
                     return 0;
@@ -574,7 +521,7 @@ namespace util_v4l2 {
 
         process_image(buffers[buf.index].start, buf.bytesused);
 
-        if (-1 == util_v4l2_a::xioctl(fd, VIDIOC_QBUF, &buf))
+        if (-1 == util_v4l2::xioctl(fd, VIDIOC_QBUF, &buf))
         {
             printf("ERROR: read_frame VIDIOC_DQBUF\n");
             return -1;

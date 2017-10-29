@@ -23,7 +23,7 @@ enum class pixel_format{
     V4L2CXX_PIX_FMT_RGB332 = V4L2_PIX_FMT_RGB332,
     V4L2CXX_PIX_FMT_YVYU = V4L2_PIX_FMT_YVYU
 };
-namespace util_v4l2_a{
+namespace util_v4l2{
 
     static int xioctl(int fd, int request, void *arg) {
         int r;
@@ -32,6 +32,20 @@ namespace util_v4l2_a{
         return r;
     }
 
+    int open_device(std::string device_node) {
+
+        int fd;
+
+        fd = open(device_node.c_str(), O_RDWR);
+        if (fd == -1) {
+            // couldn't find capture device
+            perror("Opening Video device");
+            return -1;
+        }
+
+        return fd;
+
+    }
 
     //V4L2_PIX_FMT_*
     void set_format(int fd , uint32_t width, uint32_t height,pixel_format pixel_format ) {
@@ -61,4 +75,51 @@ namespace util_v4l2_a{
         //printfmt(fmt);
 
     }
-}
+
+    int query_capabilites(int fd) {
+
+        struct v4l2_capability caps;
+        if (-1 == util_v4l2::xioctl(fd, VIDIOC_QUERYCAP, &caps)) {
+            perror("Querying Capabilites");
+            return 1;
+        }
+
+//        printf("cap 0x %x \n", caps.capabilities);
+//
+//        auto tmp = caps.capabilities;
+//
+//        if (caps.device_caps & V4L2_CAP_VIDEO_CAPTURE) {
+//            std::cout << "V4L2_CAP_VIDEO_CAPTURE" << std::endl;
+//        }
+//        if (caps.device_caps & V4L2_CAP_VIDEO_OUTPUT) {
+//            std::cout << "V4L2_CAP_VIDEO_OUTPUT" << std::endl;
+//        }
+//        if (caps.device_caps & V4L2_CAP_STREAMING) {
+//            std::cout << "V4L2_CAP_STREAMING" << std::endl;
+//        }
+
+        return 0;
+    }
+
+    std::vector<v4l2_fmtdesc> query_formats(int fd) {
+
+        std::vector<v4l2_fmtdesc> formats;
+        struct v4l2_fmtdesc fmt;
+        fmt.index = 0;
+        fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+
+        while (-1 != util_v4l2::xioctl(fd, VIDIOC_ENUM_FMT, &fmt)) {
+
+            struct v4l2_fmtdesc fmt2;
+            fmt2.index = 0;
+            fmt2.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+            util_v4l2::xioctl(fd, VIDIOC_ENUM_FMT, &fmt2);
+            formats.push_back(fmt2);
+            fmt.index++;
+        }
+        return formats;
+    }
+
+
+
+}// namespace
