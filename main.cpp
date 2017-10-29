@@ -7,13 +7,13 @@
 int main() {
     //std::cout << "Hello, World!" << std::endl;
 
-    int fd = util_v4l2::open_device("/dev/video1");
+    int fd = util_v4l2::open_device("/dev/video0");
 
     util_v4l2::query_capabilites(fd);
 
     util_v4l2::query_formats(fd);
 
-    util_v4l2::set_format(fd);
+    util_v4l2_a::set_format(fd,640,480,pixel_format::V4L2CXX_PIX_FMT_YVYU);
 
     util_v4l2::init_mmap(fd);
 
