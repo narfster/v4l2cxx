@@ -204,7 +204,6 @@ namespace util_v4l2{
         //*ppBuffer = (buffer *) calloc(req.count, sizeof(buffer));
 
 
-        std::cout << "size of "  << sizeof(buffer) << "\n";
 
         if (!buffer) {
             fprintf(stderr, "Out of memory\n");
