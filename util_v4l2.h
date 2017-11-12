@@ -18,8 +18,11 @@
 #include <unistd.h>
 #include <cerrno>
 #include <iostream>
+#include "v4l2cxx.h"
 
 #define UTIL_CLEAR(x) memset(&(x), 0, sizeof(x))
+
+
 
 enum class pixel_format{
     V4L2CXX_PIX_FMT_RGB332 = V4L2_PIX_FMT_RGB332,
@@ -27,12 +30,22 @@ enum class pixel_format{
 };
 namespace util_v4l2{
 
+    struct buffer {
+        void *start;
+        size_t length;
+    };
+
+
     static int xioctl(int fd, int request, void *arg) {
         int r;
         do r = ioctl(fd, request, arg);
         while (-1 == r && EINTR == errno);
         return r;
     }
+
+    ///////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////
 
     int open_device(std::string device_node) {
 
@@ -46,8 +59,11 @@ namespace util_v4l2{
         }
 
         return fd;
-
     }
+
+    ///////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////
 
     //V4L2_PIX_FMT_*
     void set_format(int fd , uint32_t width, uint32_t height,pixel_format pixel_format ) {
@@ -78,6 +94,10 @@ namespace util_v4l2{
 
     }
 
+    ///////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////
+
     int query_capabilites(int fd) {
 
         struct v4l2_capability caps;
@@ -103,6 +123,10 @@ namespace util_v4l2{
         return 0;
     }
 
+    ///////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////
+
     std::vector<v4l2_fmtdesc> query_formats(int fd) {
 
         std::vector<v4l2_fmtdesc> formats;
@@ -122,7 +146,11 @@ namespace util_v4l2{
         return formats;
     }
 
-    static void start_capturing(int fd, int numOfBuffers) {
+    ///////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////
+
+    static void start_capturing(int fd, int numOfBuffers, buffer *pBuffer) {
         unsigned int i;
         enum v4l2_buf_type type;
 
@@ -144,6 +172,70 @@ namespace util_v4l2{
         if (-1 == util_v4l2::xioctl(fd, VIDIOC_STREAMON, &type))
             printf("ERROR: start_capturing VIDIOC_STREAMON");
 
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////
+
+    static void init_mmap(int fd, buffer Buffer[]) {
+        struct v4l2_requestbuffers req;
+
+        UTIL_CLEAR(req);
+
+        req.count = 4;
+        req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        req.memory = V4L2_MEMORY_MMAP;
+
+        if (-1 == util_v4l2::xioctl(fd, VIDIOC_REQBUFS, &req)) {
+            if (EINVAL == errno) {
+                printf("ERROR does not support memory mapping\n");
+                exit(EXIT_FAILURE);
+            } else {
+                printf("ERROR: VIDIOC_REQBUFS");
+            }
+        }
+
+        if (req.count < 2) {
+            fprintf(stderr, "Insufficient buffer memory\n");
+            exit(EXIT_FAILURE);
+        }
+
+        //*ppBuffer = (buffer *) calloc(req.count, sizeof(buffer));
+
+
+        std::cout << "size of "  << sizeof(buffer) << "\n";
+
+        if (!Buffer) {
+            fprintf(stderr, "Out of memory\n");
+            exit(EXIT_FAILURE);
+        }
+
+        int i = 0;
+        for (i = 0; i < req.count; ++i) {
+            struct v4l2_buffer buf;
+
+            UTIL_CLEAR(buf);
+
+            buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+            buf.memory = V4L2_MEMORY_MMAP;
+            buf.index = i;
+
+            if (-1 == util_v4l2::xioctl(fd, VIDIOC_QUERYBUF, &buf))
+                printf("ERROR: VIDIOC_QUERYBUF");
+
+            (Buffer[i]).length = buf.length;
+            (Buffer[i]).start =
+                    mmap(NULL /* start anywhere */,
+                         buf.length,
+                         PROT_READ | PROT_WRITE /* required */,
+                         MAP_SHARED /* recommended */,
+                         fd, buf.m.offset);
+
+            if (MAP_FAILED == (Buffer[i]).start) {
+                printf("ERROR: mmap");
+            }
+        }
     }
 
 

@@ -22,6 +22,8 @@
 
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 
+
+
 void raw_to_rgb(void* inBuff, int inBuffSize, void* outBuff, int outBuffSize, uint32_t numOfPixels, int bitPerPixel)
 {
     auto dst = static_cast<uint8_t *>(outBuff);
@@ -39,13 +41,6 @@ void raw_to_rgb(void* inBuff, int inBuffSize, void* outBuff, int outBuffSize, ui
     }
 }
 
-struct buffer {
-    void *start;
-    size_t length;
-};
-
-struct buffer *buffers;
-static unsigned int n_buffers;
 
 
 namespace util_v4l2_b {
@@ -382,61 +377,7 @@ namespace util_v4l2_b {
 
 
 
-    static void init_mmap(int fd) {
-        struct v4l2_requestbuffers req;
 
-        CLEAR(req);
-
-        req.count = 4;
-        req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        req.memory = V4L2_MEMORY_MMAP;
-
-        if (-1 == util_v4l2::xioctl(fd, VIDIOC_REQBUFS, &req)) {
-            if (EINVAL == errno) {
-                printf("ERROR does not support memory mapping\n");
-                exit(EXIT_FAILURE);
-            } else {
-                printf("ERROR: VIDIOC_REQBUFS");
-            }
-        }
-
-        if (req.count < 2) {
-            fprintf(stderr, "Insufficient buffer memory\n");
-            exit(EXIT_FAILURE);
-        }
-
-        buffers = (buffer *) calloc(req.count, sizeof(*buffers));
-
-        if (!buffers) {
-            fprintf(stderr, "Out of memory\n");
-            exit(EXIT_FAILURE);
-        }
-
-        for (n_buffers = 0; n_buffers < req.count; ++n_buffers) {
-            struct v4l2_buffer buf;
-
-            CLEAR(buf);
-
-            buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-            buf.memory = V4L2_MEMORY_MMAP;
-            buf.index = n_buffers;
-
-            if (-1 == util_v4l2::xioctl(fd, VIDIOC_QUERYBUF, &buf))
-                printf("ERROR: VIDIOC_QUERYBUF");
-
-            buffers[n_buffers].length = buf.length;
-            buffers[n_buffers].start =
-                    mmap(NULL /* start anywhere */,
-                         buf.length,
-                         PROT_READ | PROT_WRITE /* required */,
-                         MAP_SHARED /* recommended */,
-                         fd, buf.m.offset);
-
-            if (MAP_FAILED == buffers[n_buffers].start) {
-                printf("ERROR: mmap");
-            }
-        }
-    }
 
 
 
@@ -467,7 +408,10 @@ namespace util_v4l2_b {
 //        fclose(fp);
     }
 
-    static int read_frame(int fd) {
+
+
+
+    static int read_frame(int fd, util_v4l2::buffer *pBuffer) {
         struct v4l2_buffer buf;
         unsigned int i;
 
@@ -495,9 +439,9 @@ namespace util_v4l2_b {
             }
         }
 
-        assert(buf.index < n_buffers);
+        assert(buf.index < 4);
 
-        process_image(buffers[buf.index].start, buf.bytesused);
+        process_image(pBuffer[buf.index].start, buf.bytesused);
 
         if (-1 == util_v4l2::xioctl(fd, VIDIOC_QBUF, &buf))
         {
@@ -508,7 +452,7 @@ namespace util_v4l2_b {
         return 1;
     }
 
-    static void mainloop(int fd) {
+    static void mainloop(int fd, util_v4l2::buffer *pBuffer) {
         unsigned int count;
 
         count = 200;
@@ -542,7 +486,7 @@ namespace util_v4l2_b {
                     exit(EXIT_FAILURE);
                 }
 
-                if (read_frame(fd))
+                if (read_frame(fd, pBuffer))
                     break;
 
                 /* EAGAIN - continue select loop. */
