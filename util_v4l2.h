@@ -178,7 +178,7 @@ namespace util_v4l2{
     ///////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////
 
-    static void init_mmap(int fd, buffer Buffer[]) {
+    static void init_mmap(int fd, buffer buffer[]) {
         struct v4l2_requestbuffers req;
 
         UTIL_CLEAR(req);
@@ -206,7 +206,7 @@ namespace util_v4l2{
 
         std::cout << "size of "  << sizeof(buffer) << "\n";
 
-        if (!Buffer) {
+        if (!buffer) {
             fprintf(stderr, "Out of memory\n");
             exit(EXIT_FAILURE);
         }
@@ -224,15 +224,15 @@ namespace util_v4l2{
             if (-1 == util_v4l2::xioctl(fd, VIDIOC_QUERYBUF, &buf))
                 printf("ERROR: VIDIOC_QUERYBUF");
 
-            (Buffer[i]).length = buf.length;
-            (Buffer[i]).start =
+            (buffer[i]).length = buf.length;
+            (buffer[i]).start =
                     mmap(NULL /* start anywhere */,
                          buf.length,
                          PROT_READ | PROT_WRITE /* required */,
                          MAP_SHARED /* recommended */,
                          fd, buf.m.offset);
 
-            if (MAP_FAILED == (Buffer[i]).start) {
+            if (MAP_FAILED == (buffer[i]).start) {
                 printf("ERROR: mmap");
             }
         }
