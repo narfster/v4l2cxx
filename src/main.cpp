@@ -1,16 +1,10 @@
-
-
-
 #include "v4l2cxx.h"
-
-
 
 
 
 int main() {
 
     struct util_v4l2::buffer buffers[4];
-    static unsigned int n_buffers;
 
     int fd = util_v4l2::open_device("/dev/video0");
 
