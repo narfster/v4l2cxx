@@ -1,12 +1,15 @@
 #include "v4l2cxx.h"
 
-
+#define TEST() if(err!=0) assert(0)
 
 int main() {
 
     struct util_v4l2::buffer buffers[4];
 
-    int fd = util_v4l2::open_device("/dev/video0");
+    int err = 0;
+    int fd = util_v4l2::open_device("/dev/video0", err);
+    TEST();
+
 
     util_v4l2::query_capabilites(fd);
 

@@ -49,14 +49,16 @@ namespace util_v4l2{
     ///////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////
 
-    int open_device(std::string device_node) {
+    int open_device(std::string device_node, int &err) {
 
         int fd;
+        err = 0;
 
         fd = open(device_node.c_str(), O_RDWR);
         if (fd == -1) {
             // couldn't find capture device
             perror("Opening Video device");
+            err = -1;
             return -1;
         }
 
@@ -147,7 +149,7 @@ namespace util_v4l2{
         return format;
     }
 
-        ///////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////
 
@@ -159,11 +161,6 @@ namespace util_v4l2{
         fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 
         while (-1 != util_v4l2::xioctl(fd, VIDIOC_ENUM_FMT, &fmt)) {
-
-            //struct v4l2_fmtdesc fmt2;
-            //fmt2.index = 0;
-            //fmt2.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-            util_v4l2::xioctl(fd, VIDIOC_ENUM_FMT, &fmt);
             formats.push_back(fmt);
             fmt.index++;
         }
