@@ -9,20 +9,21 @@
 
 
 int main() {
-    //std::cout << "Hello, World!" << std::endl;
 
     struct util_v4l2::buffer buffers[4];
     static unsigned int n_buffers;
-
-
 
     int fd = util_v4l2::open_device("/dev/video0");
 
     util_v4l2::query_capabilites(fd);
 
-    util_v4l2::query_formats(fd);
+    auto vec = util_v4l2::query_formats(fd);
 
     util_v4l2::set_format(fd,640,480,pixel_format::V4L2CXX_PIX_FMT_YVYU);
+
+    auto vec_format = util_v4l2::get_current_format(fd);
+
+    util_v4l2::printfmt(vec_format);
 
     util_v4l2::init_mmap(fd, buffers);
 
