@@ -1,8 +1,7 @@
-#include <iostream>
 
-#include <cstring>
+
+
 #include "v4l2cxx.h"
-#include "util_v4l2.h"
 
 
 

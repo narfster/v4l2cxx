@@ -11,5 +11,5 @@ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra ")
 endif()
 
-set(SOURCE_FILES main.cpp v4l2cxx.h util_v4l2.h)
+set(SOURCE_FILES src/main.cpp src/v4l2cxx.h src/util_v4l2.h)
 add_executable(libv4l2cxx ${SOURCE_FILES})
