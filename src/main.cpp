@@ -1,14 +1,14 @@
 #include "v4l2cxx.h"
 
-#define TEST() if(err!=0) assert(0)
+
 
 int main() {
 
     struct util_v4l2::buffer buffers[4];
 
-    int err = 0;
+    error_code err = error_code ::ERR_NO_ERROR;
+
     int fd = util_v4l2::open_device("/dev/video0", err);
-    TEST();
 
 
     util_v4l2::query_capabilites(fd);
@@ -19,7 +19,7 @@ int main() {
 
     auto vec_format = util_v4l2::get_current_format(fd);
 
-    util_v4l2::printfmt(vec_format);
+    //util_v4l2::printfmt(vec_format);
 
     util_v4l2::init_mmap(fd, buffers);
 

@@ -22,6 +22,33 @@
 
 #define UTIL_CLEAR(x) memset(&(x), 0, sizeof(x))
 
+struct man{
+    man() {}
+
+    virtual ~man() {
+
+    }
+
+    bool operator==(const man &rhs) const {
+        return x == rhs.x;
+    }
+
+
+
+    int x;
+};
+
+enum class error_code{
+    ERR_NO_ERROR = 0,
+    ERR_CANNOT_OPEN_DEVICE = -1,
+    ERR_CANNOT_SET_FORMAT = -2,
+};
+
+std::ostream& operator << (std::ostream& os, const error_code& obj)
+{
+    os << static_cast<std::underlying_type<error_code>::type>(obj);
+    return os;
+}
 
 
 enum class pixel_format{
@@ -49,16 +76,15 @@ namespace util_v4l2{
     ///////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////
 
-    int open_device(std::string device_node, int &err) {
+    int open_device(std::string device_node, error_code &err) {
 
         int fd;
-        err = 0;
 
         fd = open(device_node.c_str(), O_RDWR);
         if (fd == -1) {
             // couldn't find capture device
             perror("Opening Video device");
-            err = -1;
+            err = error_code ::ERR_CANNOT_OPEN_DEVICE;
             return -1;
         }
 
@@ -69,7 +95,7 @@ namespace util_v4l2{
     ///////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////
 
-    //V4L2_PIX_FMT_*
+
     void set_format(int fd , uint32_t width, uint32_t height,pixel_format pixel_format ) {
         struct v4l2_format fmt;
         unsigned int min;
@@ -90,14 +116,15 @@ namespace util_v4l2{
 
         // Buggy driver paranoia.
         min = fmt.fmt.pix.width * 2;
-        if (fmt.fmt.pix.bytesperline < min)
+        if (fmt.fmt.pix.bytesperline < min){
             fmt.fmt.pix.bytesperline = min;
+        }
+
         min = fmt.fmt.pix.bytesperline * fmt.fmt.pix.height;
-        if (fmt.fmt.pix.sizeimage < min)
+
+        if (fmt.fmt.pix.sizeimage < min) {
             fmt.fmt.pix.sizeimage = min;
-
-        //printfmt(fmt);
-
+        }
     }
 
     ///////////////////////////////////////////////////////////////////////////////
