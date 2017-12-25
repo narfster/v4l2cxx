@@ -42,6 +42,8 @@ enum class error_code{
     ERR_NO_ERROR = 0,
     ERR_CANNOT_OPEN_DEVICE = -1,
     ERR_CANNOT_SET_FORMAT = -2,
+    ERR_QUERYING_CAP = -3,
+    ERR_QUERYING_FORMAT = -4
 };
 
 std::ostream& operator << (std::ostream& os, const error_code& obj)
@@ -131,29 +133,31 @@ namespace util_v4l2{
     ///////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////
 
-    int query_capabilites(int fd) {
+    v4l2_capability query_capabilites(int fd, error_code &err) {
 
-        struct v4l2_capability caps;
+        struct v4l2_capability caps = {0};
         if (-1 == util_v4l2::xioctl(fd, VIDIOC_QUERYCAP, &caps)) {
-            perror("Querying Capabilites");
-            return 1;
+            err = error_code::ERR_QUERYING_CAP;
         }
+        return caps;
+    }
 
-//        printf("cap 0x %x \n", caps.capabilities);
-//
-//        auto tmp = caps.capabilities;
-//
-//        if (caps.device_caps & V4L2_CAP_VIDEO_CAPTURE) {
-//            std::cout << "V4L2_CAP_VIDEO_CAPTURE" << std::endl;
-//        }
-//        if (caps.device_caps & V4L2_CAP_VIDEO_OUTPUT) {
-//            std::cout << "V4L2_CAP_VIDEO_OUTPUT" << std::endl;
-//        }
-//        if (caps.device_caps & V4L2_CAP_STREAMING) {
-//            std::cout << "V4L2_CAP_STREAMING" << std::endl;
-//        }
+    ///////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////
 
-        return 0;
+
+    void printv4l2_capabilites(v4l2_capability cap){
+
+        if (cap.device_caps & V4L2_CAP_VIDEO_CAPTURE) {
+            std::cout << "V4L2_CAP_VIDEO_CAPTURE" << std::endl;
+        }
+        if (cap.device_caps & V4L2_CAP_VIDEO_OUTPUT) {
+            std::cout << "V4L2_CAP_VIDEO_OUTPUT" << std::endl;
+        }
+        if (cap.device_caps & V4L2_CAP_STREAMING) {
+            std::cout << "V4L2_CAP_STREAMING" << std::endl;
+        }
     }
 
     ///////////////////////////////////////////////////////////////////////////////
@@ -180,7 +184,7 @@ namespace util_v4l2{
     ///////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////
 
-    std::vector<v4l2_fmtdesc> query_formats(int fd) {
+    std::vector<v4l2_fmtdesc> query_formats(int fd, error_code &err) {
 
         std::vector<v4l2_fmtdesc> formats;
         struct v4l2_fmtdesc fmt;
@@ -190,6 +194,9 @@ namespace util_v4l2{
         while (-1 != util_v4l2::xioctl(fd, VIDIOC_ENUM_FMT, &fmt)) {
             formats.push_back(fmt);
             fmt.index++;
+        }
+        if(formats.size() == 0){
+            err = error_code ::ERR_QUERYING_FORMAT;
         }
         return formats;
     }
@@ -500,7 +507,7 @@ namespace util_v4l2{
         return flags2s(service, service_def);
     }
 
-    void printfmt(const struct v4l2_format &vfmt) {
+    void printv4l2_fmt(const struct v4l2_format &vfmt) {
         const flag_def vbi_def[] = {
                 {V4L2_VBI_UNSYNC,     "unsynchronized"},
                 {V4L2_VBI_INTERLACED, "interlaced"},
