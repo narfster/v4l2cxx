@@ -53,6 +53,7 @@ namespace util_v4l2_b {
 
         char filename[15];
 
+        std::cerr << size << "\n";
 //        sprintf(filename, "frame-%d.ppm", frame_number);
 //        FILE *fp=fopen(filename,"wb");
 
@@ -75,8 +76,6 @@ namespace util_v4l2_b {
 
     static int read_frame(int fd, util_v4l2::buffer *pBuffer) {
         struct v4l2_buffer buf;
-        unsigned int i;
-
 
         CLEAR(buf);
 
@@ -115,11 +114,7 @@ namespace util_v4l2_b {
     }
 
     static void mainloop(int fd, util_v4l2::buffer *pBuffer) {
-        unsigned int count;
 
-        count = 200;
-
-        //while (count-- > 0) {
             while (1){
                 for (;;) {
                 fd_set fds;

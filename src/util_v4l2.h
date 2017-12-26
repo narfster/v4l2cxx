@@ -21,6 +21,7 @@
 #include "v4l2cxx.h"
 
 #define UTIL_CLEAR(x) memset(&(x), 0, sizeof(x))
+#define SET_ERR_CODE(err,code) if(err !=nullptr) *err = code
 
 struct man{
     man() {}
@@ -78,7 +79,7 @@ namespace util_v4l2{
     ///////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////
 
-    int open_device(std::string device_node, error_code &err) {
+    int open_device(std::string device_node, error_code *err) {
 
         int fd;
 
@@ -86,10 +87,9 @@ namespace util_v4l2{
         if (fd == -1) {
             // couldn't find capture device
             perror("Opening Video device");
-            err = error_code ::ERR_CANNOT_OPEN_DEVICE;
+            SET_ERR_CODE(err,error_code ::ERR_CANNOT_OPEN_DEVICE);
             return -1;
         }
-
         return fd;
     }
 
@@ -102,8 +102,6 @@ namespace util_v4l2{
         struct v4l2_format fmt;
         unsigned int min;
         fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-
-       auto pix_fmt1 =  static_cast<uint32_t >(pixel_format);
 
         //std::cout << "set_format()\n";
         fmt.fmt.pix.width = width; //replace
@@ -133,11 +131,11 @@ namespace util_v4l2{
     ///////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////
 
-    v4l2_capability query_capabilites(int fd, error_code &err) {
+    v4l2_capability query_capabilites(int fd, error_code *err) {
 
-        struct v4l2_capability caps = {0};
+        struct v4l2_capability caps;
         if (-1 == util_v4l2::xioctl(fd, VIDIOC_QUERYCAP, &caps)) {
-            err = error_code::ERR_QUERYING_CAP;
+            SET_ERR_CODE(err,error_code::ERR_QUERYING_CAP);
         }
         return caps;
     }
@@ -184,7 +182,7 @@ namespace util_v4l2{
     ///////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////
 
-    std::vector<v4l2_fmtdesc> query_formats(int fd, error_code &err) {
+    std::vector<v4l2_fmtdesc> query_formats(int fd, error_code *err) {
 
         std::vector<v4l2_fmtdesc> formats;
         struct v4l2_fmtdesc fmt;
@@ -196,7 +194,7 @@ namespace util_v4l2{
             fmt.index++;
         }
         if(formats.size() == 0){
-            err = error_code ::ERR_QUERYING_FORMAT;
+            SET_ERR_CODE(err,error_code ::ERR_QUERYING_FORMAT);
         }
         return formats;
     }
@@ -205,7 +203,7 @@ namespace util_v4l2{
     ///////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////
 
-    static void start_capturing(int fd, int numOfBuffers, buffer *pBuffer) {
+    static void start_capturing(int fd, uint32_t numOfBuffers) {
         unsigned int i;
         enum v4l2_buf_type type;
 
@@ -259,14 +257,12 @@ namespace util_v4l2{
         //*ppBuffer = (buffer *) calloc(req.count, sizeof(buffer));
 
 
-
         if (!buffer) {
             fprintf(stderr, "Out of memory\n");
             exit(EXIT_FAILURE);
         }
 
-        int i = 0;
-        for (i = 0; i < req.count; ++i) {
+        for (auto i = 0; i < req.count; ++i) {
             struct v4l2_buffer buf;
 
             UTIL_CLEAR(buf);
