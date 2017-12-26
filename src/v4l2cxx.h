@@ -31,7 +31,6 @@ void raw_to_rgb(void* inBuff, int inBuffSize, void* outBuff, int outBuffSize, ui
     auto shift = bitPerPixel - 8;  //i.e. 10bit - 8bit(1 byte) = 2, 12bit - 8bit = 4
 
     auto tmp = static_cast<uint16_t *>(inBuff);
-    uint8_t c = 0;
     for (auto i = 0u; i < numOfPixels; i++)
     {
         uint16_t temp = (*tmp++) >> shift; //12 bit shift 4, 10bit shift 2
@@ -53,7 +52,7 @@ namespace util_v4l2_b {
 
         char filename[15];
 
-        std::cerr << size << "\n";
+        //std::cerr << size << "\n";
 //        sprintf(filename, "frame-%d.ppm", frame_number);
 //        FILE *fp=fopen(filename,"wb");
 
