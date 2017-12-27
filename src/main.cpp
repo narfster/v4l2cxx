@@ -20,9 +20,9 @@ int main() {
 
     //util_v4l2::printv4l2_fmt(vec_format);
 
-    util_v4l2::init_mmap(fd, buffers);
+    util_v4l2::init_mmap(fd, buffers,&err);
 
-    util_v4l2::start_capturing(fd, 4);
+    util_v4l2::start_capturing(fd, 4, &err);
 
     util_v4l2_b::mainloop(fd,buffers);
 

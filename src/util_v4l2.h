@@ -44,7 +44,14 @@ enum class error_code{
     ERR_CANNOT_OPEN_DEVICE = -1,
     ERR_CANNOT_SET_FORMAT = -2,
     ERR_QUERYING_CAP = -3,
-    ERR_QUERYING_FORMAT = -4
+    ERR_QUERYING_FORMAT = -4,
+    ERR_VIDIOC_QBUF = -5,
+    ERR_VIDIOC_STREAMON = -6,
+    ERR_NO_MMAP_SUPPORT = -7,
+    ERR_VIDIO_REQBUFS = -8,
+    ERR_INSUFFICIENT_MEM = -9,
+    ERR_MMAP_INIT = -10,
+    ERR_VIDIO_QUERYBUF = -11,
 };
 
 std::ostream& operator << (std::ostream& os, const error_code& obj)
@@ -203,7 +210,7 @@ namespace util_v4l2{
     ///////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////
 
-    static void start_capturing(int fd, uint32_t numOfBuffers) {
+    static void start_capturing(int fd, uint32_t numOfBuffers, error_code *err) {
         unsigned int i;
         enum v4l2_buf_type type;
 
@@ -218,12 +225,16 @@ namespace util_v4l2{
 
             if (-1 == util_v4l2::xioctl(fd, VIDIOC_QBUF, &buf)) {
                 printf("ERROR: start_capturing VIDIOC_QBUF");
+                SET_ERR_CODE(err,error_code::ERR_VIDIOC_QBUF);
             }
 
         }
         type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        if (-1 == util_v4l2::xioctl(fd, VIDIOC_STREAMON, &type))
+        if (-1 == util_v4l2::xioctl(fd, VIDIOC_STREAMON, &type)){
             printf("ERROR: start_capturing VIDIOC_STREAMON");
+            SET_ERR_CODE(err,error_code::ERR_VIDIOC_STREAMON);
+        }
+
 
     }
 
@@ -231,7 +242,7 @@ namespace util_v4l2{
     ///////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////
 
-    static void init_mmap(int fd, buffer buffer[]) {
+    static void init_mmap(int fd, buffer buffer[], error_code *err) {
         struct v4l2_requestbuffers req;
 
         UTIL_CLEAR(req);
@@ -243,15 +254,16 @@ namespace util_v4l2{
         if (-1 == util_v4l2::xioctl(fd, VIDIOC_REQBUFS, &req)) {
             if (EINVAL == errno) {
                 printf("ERROR does not support memory mapping\n");
-                exit(EXIT_FAILURE);
+                SET_ERR_CODE(err,error_code::ERR_NO_MMAP_SUPPORT);
             } else {
                 printf("ERROR: VIDIOC_REQBUFS");
+                SET_ERR_CODE(err,error_code::ERR_VIDIO_REQBUFS);
             }
         }
 
         if (req.count < 2) {
             fprintf(stderr, "Insufficient buffer memory\n");
-            exit(EXIT_FAILURE);
+            SET_ERR_CODE(err,error_code::ERR_INSUFFICIENT_MEM);
         }
 
         //*ppBuffer = (buffer *) calloc(req.count, sizeof(buffer));
@@ -271,8 +283,11 @@ namespace util_v4l2{
             buf.memory = V4L2_MEMORY_MMAP;
             buf.index = i;
 
-            if (-1 == util_v4l2::xioctl(fd, VIDIOC_QUERYBUF, &buf))
+            if (-1 == util_v4l2::xioctl(fd, VIDIOC_QUERYBUF, &buf)){
                 printf("ERROR: VIDIOC_QUERYBUF");
+                SET_ERR_CODE(err,error_code::ERR_VIDIO_QUERYBUF);
+            }
+
 
             (buffer[i]).length = buf.length;
             (buffer[i]).start =
@@ -284,6 +299,7 @@ namespace util_v4l2{
 
             if (MAP_FAILED == (buffer[i]).start) {
                 printf("ERROR: mmap");
+                SET_ERR_CODE(err,error_code::ERR_MMAP_INIT);
             }
         }
     }
