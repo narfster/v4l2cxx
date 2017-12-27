@@ -52,6 +52,7 @@ enum class error_code{
     ERR_INSUFFICIENT_MEM = -9,
     ERR_MMAP_INIT = -10,
     ERR_VIDIO_QUERYBUF = -11,
+    ERR_VIDIOC_S_FMT = -12
 };
 
 std::ostream& operator << (std::ostream& os, const error_code& obj)
@@ -89,7 +90,7 @@ namespace util_v4l2{
     int open_device(std::string device_node, error_code *err) {
 
         int fd;
-
+        SET_ERR_CODE(err, error_code::ERR_NO_ERROR);
         fd = open(device_node.c_str(), O_RDWR);
         if (fd == -1) {
             // couldn't find capture device
@@ -105,10 +106,11 @@ namespace util_v4l2{
     ///////////////////////////////////////////////////////////////////////////////
 
 
-    void set_format(int fd , uint32_t width, uint32_t height,pixel_format pixel_format ) {
+    void set_format(int fd , uint32_t width, uint32_t height,pixel_format pixel_format, error_code  *err) {
         struct v4l2_format fmt;
         unsigned int min;
         fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        SET_ERR_CODE(err, error_code::ERR_NO_ERROR);
 
         //std::cout << "set_format()\n";
         fmt.fmt.pix.width = width; //replace
@@ -118,6 +120,7 @@ namespace util_v4l2{
 
         if (-1 == xioctl(fd, VIDIOC_S_FMT, &fmt)) {
             std::cout << "ERROR set_format\n";
+            SET_ERR_CODE(err, error_code::ERR_VIDIOC_S_FMT);
         }
         // Note VIDIOC_S_FMT may change width and height.
 
@@ -132,6 +135,9 @@ namespace util_v4l2{
         if (fmt.fmt.pix.sizeimage < min) {
             fmt.fmt.pix.sizeimage = min;
         }
+        if(width != fmt.fmt.pix.width || height != fmt.fmt.pix.height){
+            SET_ERR_CODE(err, error_code::ERR_CANNOT_SET_FORMAT);
+        }
     }
 
     ///////////////////////////////////////////////////////////////////////////////
@@ -139,7 +145,7 @@ namespace util_v4l2{
     ///////////////////////////////////////////////////////////////////////////////
 
     v4l2_capability query_capabilites(int fd, error_code *err) {
-
+        SET_ERR_CODE(err, error_code::ERR_NO_ERROR);
         struct v4l2_capability caps;
         if (-1 == util_v4l2::xioctl(fd, VIDIOC_QUERYCAP, &caps)) {
             SET_ERR_CODE(err,error_code::ERR_QUERYING_CAP);
@@ -190,6 +196,7 @@ namespace util_v4l2{
     ///////////////////////////////////////////////////////////////////////////////
 
     std::vector<v4l2_fmtdesc> query_formats(int fd, error_code *err) {
+        SET_ERR_CODE(err, error_code::ERR_NO_ERROR);
 
         std::vector<v4l2_fmtdesc> formats;
         struct v4l2_fmtdesc fmt;
@@ -211,9 +218,9 @@ namespace util_v4l2{
     ///////////////////////////////////////////////////////////////////////////////
 
     static void start_capturing(int fd, uint32_t numOfBuffers, error_code *err) {
+        SET_ERR_CODE(err, error_code::ERR_NO_ERROR);
         unsigned int i;
         enum v4l2_buf_type type;
-
 
         for (i = 0; i < numOfBuffers; ++i) {
             struct v4l2_buffer buf;
@@ -243,6 +250,7 @@ namespace util_v4l2{
     ///////////////////////////////////////////////////////////////////////////////
 
     static void init_mmap(int fd, buffer buffer[], error_code *err) {
+        SET_ERR_CODE(err, error_code::ERR_NO_ERROR);
         struct v4l2_requestbuffers req;
 
         UTIL_CLEAR(req);

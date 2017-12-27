@@ -10,11 +10,13 @@ int main() {
 
     int fd = util_v4l2::open_device("/dev/video0", &err);
 
+
     auto cap = util_v4l2::query_capabilites(fd,&err);
 
     auto vec = util_v4l2::query_formats(fd,&err);
 
-    util_v4l2::set_format(fd,640,480,pixel_format::V4L2CXX_PIX_FMT_YVYU);
+    util_v4l2::set_format(fd,640,480,pixel_format::V4L2CXX_PIX_FMT_YVYU, &err);
+    assert(err == error_code::ERR_NO_ERROR);
 
     auto vec_format = util_v4l2::get_current_format(fd);
 
