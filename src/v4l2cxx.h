@@ -142,14 +142,13 @@ namespace util_v4l2_b {
                     exit(EXIT_FAILURE);
                 }
 
-                if (read_frame(fd, pBuffer))
+                if (util_v4l2_b::read_frame(fd, pBuffer))
                     break;
 
                 /* EAGAIN - continue select loop. */
             }
         }
     }
-
 
 }
 

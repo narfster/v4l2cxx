@@ -18,7 +18,7 @@ int main() {
     util_v4l2::set_format(fd,640,480,pixel_format::V4L2CXX_PIX_FMT_YVYU, &err);
     assert(err == error_code::ERR_NO_ERROR);
 
-    auto vec_format = util_v4l2::get_current_format(fd);
+    auto vec_format = util_v4l2::get_current_format(fd,&err);
 
     //util_v4l2::printv4l2_fmt(vec_format);
 
@@ -26,7 +26,7 @@ int main() {
 
     util_v4l2::start_capturing(fd, 4, &err);
 
-    util_v4l2_b::mainloop(fd,buffers);
+    util_v4l2::mainloop(fd,buffers);
 
 
     return 0;
