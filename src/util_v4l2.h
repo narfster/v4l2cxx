@@ -23,40 +23,42 @@
 
 #define UTIL_CLEAR(x) memset(&(x), 0, sizeof(x))
 #define SET_ERR_CODE(err,code) if(err !=nullptr) *err = code
-#define ASSERT_ERR_CODE(x)  assert(x == error_code::ERR_NO_ERROR);
+#define ASSERT_ERR_CODE(x)  if(x != error_code::ERR_NO_ERROR)\
+                                {\
+                                    print_err_code(x) ;\
+                                    std::cout << "\n"<< __FILE__ << ":" << __LINE__ << "  ";\
+                                    exit(1);\
+                                }
 
-struct man{
-    man() {}
-
-    virtual ~man() {
-
-    }
-
-    bool operator==(const man &rhs) const {
-        return x == rhs.x;
-    }
-
-
-
-    int x;
-};
 
 enum class error_code{
     ERR_NO_ERROR = 0,
-    ERR_CANNOT_OPEN_DEVICE = -1,
-    ERR_CANNOT_SET_FORMAT = -2,
-    ERR_QUERYING_CAP = -3,
-    ERR_QUERYING_FORMAT = -4,
-    ERR_VIDIOC_QBUF = -5,
-    ERR_VIDIOC_STREAMON = -6,
-    ERR_NO_MMAP_SUPPORT = -7,
-    ERR_VIDIO_REQBUFS = -8,
-    ERR_INSUFFICIENT_MEM = -9,
-    ERR_MMAP_INIT = -10,
-    ERR_VIDIO_QUERYBUF = -11,
-    ERR_VIDIOC_S_FMT = -12,
-    ERR_VIDIOC_G_FMT = -13
+    ERR_CANNOT_OPEN_DEVICE,
+    ERR_CANNOT_SET_FORMAT,
+    ERR_QUERYING_CAP,
+    ERR_QUERYING_FORMAT,
+    ERR_VIDIOC_QBUF,
+    ERR_VIDIOC_STREAMON,
+    ERR_NO_MMAP_SUPPORT,
+    ERR_VIDIO_REQBUFS,
+    ERR_INSUFFICIENT_MEM,
+    ERR_MMAP_INIT ,
+    ERR_VIDIO_QUERYBUF,
+    ERR_VIDIOC_S_FMT,
+    ERR_VIDIOC_G_FMT
 };
+
+void print_err_code(error_code err){
+    switch(err){
+        case error_code::ERR_CANNOT_OPEN_DEVICE:
+        std::cout << "ERR_CANNOT_OPEN_DEVICE" << " " << static_cast<int>(err);
+            break;
+        default:
+        std::cout << "ERROR # " <<static_cast<int>(err);
+            break;
+    }
+
+}
 
 std::ostream& operator << (std::ostream& os, const error_code& obj)
 {
@@ -67,6 +69,7 @@ std::ostream& operator << (std::ostream& os, const error_code& obj)
 
 enum class pixel_format{
     V4L2CXX_PIX_FMT_RGB332 = V4L2_PIX_FMT_RGB332,
+    V4L2CXX_PIX_FMT_YUYV = V4L2_PIX_FMT_YUYV,
     V4L2CXX_PIX_FMT_YVYU = V4L2_PIX_FMT_YVYU,
     V4L2CXX_PIX_FMT_MJPEG = V4L2_PIX_FMT_MJPEG
 
@@ -111,7 +114,7 @@ namespace util_v4l2{
     ///////////////////////////////////////////////////////////////////////////////
 
 
-    void set_format(int fd , uint32_t width, uint32_t height,pixel_format pixel_format, error_code  *err) {
+    void set_format(int fd , uint32_t width, uint32_t height,pixel_format format, error_code  *err) {
         struct v4l2_format fmt;
         unsigned int min;
         fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -120,7 +123,7 @@ namespace util_v4l2{
         //std::cout << "set_format()\n";
         fmt.fmt.pix.width = width; //replace
         fmt.fmt.pix.height = height; //replace
-        fmt.fmt.pix.pixelformat = static_cast<__u32>(pixel_format); //replace
+        fmt.fmt.pix.pixelformat = static_cast<__u32>(format); //replace
         fmt.fmt.pix.field = V4L2_FIELD_ANY;
 
         if (-1 == xioctl(fd, VIDIOC_S_FMT, &fmt)) {
@@ -140,9 +143,17 @@ namespace util_v4l2{
         if (fmt.fmt.pix.sizeimage < min) {
             fmt.fmt.pix.sizeimage = min;
         }
+
+        // Test Resolution was set correctly
         if(width != fmt.fmt.pix.width || height != fmt.fmt.pix.height){
             SET_ERR_CODE(err, error_code::ERR_CANNOT_SET_FORMAT);
         }
+
+        // Test format was set correctly
+        if(static_cast<__u32>(format) != fmt.fmt.pix.pixelformat){
+            SET_ERR_CODE(err, error_code::ERR_CANNOT_SET_FORMAT);
+        }
+
     }
 
     ///////////////////////////////////////////////////////////////////////////////

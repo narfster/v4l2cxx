@@ -11,14 +11,15 @@
 #include <cstring>
 #include <vector>
 #include <sys/mman.h>
-#include <assert.h>
+#include <cassert>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/time.h>
-#include <errno.h>
+#include <cerrno>
 #include <unistd.h>
 #include "util_v4l2.h"
+#include "capture.h"
 
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 
