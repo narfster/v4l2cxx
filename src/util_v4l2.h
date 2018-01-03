@@ -22,6 +22,7 @@
 
 #define UTIL_CLEAR(x) memset(&(x), 0, sizeof(x))
 #define SET_ERR_CODE(err,code) if(err !=nullptr) *err = code
+#define ASSERT_ERR_CODE(x)  assert(x == error_code::ERR_NO_ERROR);
 
 struct man{
     man() {}

@@ -23,7 +23,7 @@
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 
 
-
+#if 0
 void raw_to_rgb(void* inBuff, int inBuffSize, void* outBuff, int outBuffSize, uint32_t numOfPixels, int bitPerPixel)
 {
     auto dst = static_cast<uint8_t *>(outBuff);
@@ -152,3 +152,4 @@ namespace util_v4l2_b {
 
 }
 
+#endif
