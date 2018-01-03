@@ -4,7 +4,7 @@
 - [Design goals](#design-goals)
 - [Integration](#integration)
 - [Examples](#examples)
-  - [JSON as first-class data type](#pipe-to-ffplay)
+  - [Pipe to ffplay](#pipe-to-ffplay)
 
 
 ## Design goals
