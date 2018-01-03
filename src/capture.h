@@ -34,7 +34,7 @@ public:
         util_v4l2::init_mmap(fd_, buffers, &err_);
         ASSERT_ERR_CODE(err_);
 
-        util_v4l2::set_v4l2_buff_type(fd_,&err_);
+        util_v4l2::set_v4l2_buff_type(fd_, V4L2_BUF_TYPE_VIDEO_CAPTURE, &err_);
         ASSERT_ERR_CODE(err_);
 
     }
@@ -44,9 +44,10 @@ public:
     ///////////////////////////////////////////////////////////////////////////////
 
     void run() {
-        util_v4l2::start_capturing(fd_, NUM_OF_MAP_BUFFER, &err_);
+        util_v4l2::queue_frames(fd_, NUM_OF_MAP_BUFFER, &err_);
         ASSERT_ERR_CODE(err_);
 
+        // blocks indefintly.
         util_v4l2::mainloop(fd_, buffers, callback_, &err_);
         ASSERT_ERR_CODE(err_);
     }
@@ -61,6 +62,9 @@ public:
 
         util_v4l2::init_mmap(fd_, buffers, &err_);
         ASSERT_ERR_CODE(err_);
+
+        util_v4l2::set_v4l2_buff_type(fd_, V4L2_BUF_TYPE_VIDEO_CAPTURE, &err_);
+        ASSERT_ERR_CODE(err_);
     }
 
     ///////////////////////////////////////////////////////////////////////////////
@@ -68,8 +72,8 @@ public:
     ///////////////////////////////////////////////////////////////////////////////
 
     int read() {
-        int numOfBytes = util_v4l2::read_one_frame(fd_,buffers,callback_,&err_);
-        //ASSERT_ERR_CODE(err_);
+        int numOfBytes = util_v4l2::read_one_frame(fd_, buffers, callback_, &err_);
+        ASSERT_ERR_CODE(err_);
         return numOfBytes;
     }
 

@@ -161,12 +161,12 @@ namespace util_v4l2 {
     ///////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////
-    void set_v4l2_buff_type(int fd, error_code *err){
+    void set_v4l2_buff_type(int fd, v4l2_buf_type buf_type, error_code *err){
         SET_ERR_CODE(err,error_code::ERR_NO_ERROR);
         enum v4l2_buf_type type;
-        type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        type = buf_type;
         if (-1 == util_v4l2::xioctl(fd, VIDIOC_STREAMON, &type)) {
-            std::cerr << "ERROR: start_capturing VIDIOC_STREAMON\n";
+            std::cerr << "ERROR: queue_frames VIDIOC_STREAMON\n";
             SET_ERR_CODE(err,error_code::ERR_NO_ERROR);
         }
 
@@ -202,7 +202,7 @@ namespace util_v4l2 {
         buf.index = 0;
 
         if (-1 == util_v4l2::xioctl(fd, VIDIOC_QBUF, &buf)) {
-            printf("ERROR: start_capturing VIDIOC_QBUF");
+            printf("ERROR: queue_frames VIDIOC_QBUF");
             SET_ERR_CODE(err,error_code::ERR_READ_FRAME);
         }
 
@@ -298,7 +298,7 @@ namespace util_v4l2 {
     ///////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////
 
-    static void start_capturing(int fd, uint32_t numOfBuffers, error_code *err) {
+    static void queue_frames(int fd, uint32_t numOfBuffers, error_code *err) {
         SET_ERR_CODE(err, error_code::ERR_NO_ERROR);
         unsigned int i;
         enum v4l2_buf_type type;
@@ -313,7 +313,7 @@ namespace util_v4l2 {
             buf.index = i;
 
             if (-1 == util_v4l2::xioctl(fd, VIDIOC_QBUF, &buf)) {
-                printf("ERROR: start_capturing VIDIOC_QBUF");
+                printf("ERROR: queue_frames VIDIOC_QBUF");
                 SET_ERR_CODE(err, error_code::ERR_VIDIOC_QBUF);
             }
         }
@@ -337,14 +337,14 @@ namespace util_v4l2 {
             buf.index = i;
 
 //            if (-1 == util_v4l2::xioctl(fd, VIDIOC_DQBUF, &buf)) {
-//                printf("ERROR: start_capturing VIDIOC_DQBUF");
+//                printf("ERROR: queue_frames VIDIOC_DQBUF");
 //                SET_ERR_CODE(err, error_code::ERR_VIDIOC_QBUF);
 //            }
 
         }
         type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         if (-1 == util_v4l2::xioctl(fd, VIDIOC_STREAMOFF, &type)) {
-            printf("ERROR: start_capturing VIDIOC_STREAMON");
+            printf("ERROR: queue_frames VIDIOC_STREAMON");
             //SET_ERR_CODE(err, error_code::VIDIOC_STREAMOFF);
         }
     }
