@@ -22,16 +22,16 @@
 
 
 #define UTIL_CLEAR(x) memset(&(x), 0, sizeof(x))
-#define SET_ERR_CODE(err,code) if(err !=nullptr) *err = code
+#define SET_ERR_CODE(err, code) if(err !=nullptr) *err = code
 #define ASSERT_ERR_CODE(x)  if(x != error_code::ERR_NO_ERROR)\
                                 {\
                                     print_err_code(x) ;\
-                                    std::cout << "\n"<< __FILE__ << ":" << __LINE__ << "  ";\
+                                    std::cerr << "\n"<< __FILE__ << ":" << __LINE__ << "  ";\
                                     exit(1);\
                                 }
 
 
-enum class error_code{
+enum class error_code {
     ERR_NO_ERROR = 0,
     ERR_CANNOT_OPEN_DEVICE,
     ERR_CANNOT_SET_FORMAT,
@@ -42,32 +42,32 @@ enum class error_code{
     ERR_NO_MMAP_SUPPORT,
     ERR_VIDIO_REQBUFS,
     ERR_INSUFFICIENT_MEM,
-    ERR_MMAP_INIT ,
+    ERR_MMAP_INIT,
     ERR_VIDIO_QUERYBUF,
     ERR_VIDIOC_S_FMT,
-    ERR_VIDIOC_G_FMT
+    ERR_VIDIOC_G_FMT,
+    ERR_READ_FRAME
 };
 
-void print_err_code(error_code err){
-    switch(err){
+void print_err_code(error_code err) {
+    switch (err) {
         case error_code::ERR_CANNOT_OPEN_DEVICE:
-        std::cout << "ERR_CANNOT_OPEN_DEVICE" << " " << static_cast<int>(err);
+            std::cerr << "ERR_CANNOT_OPEN_DEVICE" << " " << static_cast<int>(err);
             break;
         default:
-        std::cout << "ERROR # " <<static_cast<int>(err);
+            std::cerr << "ERROR # " << static_cast<int>(err);
             break;
     }
 
 }
 
-std::ostream& operator << (std::ostream& os, const error_code& obj)
-{
+std::ostream &operator<<(std::ostream &os, const error_code &obj) {
     os << static_cast<std::underlying_type<error_code>::type>(obj);
     return os;
 }
 
 
-enum class pixel_format{
+enum class pixel_format {
     V4L2CXX_PIX_FMT_RGB332 = V4L2_PIX_FMT_RGB332,
     V4L2CXX_PIX_FMT_YUYV = V4L2_PIX_FMT_YUYV,
     V4L2CXX_PIX_FMT_YVYU = V4L2_PIX_FMT_YVYU,
@@ -76,7 +76,7 @@ enum class pixel_format{
 };
 
 class function;
-namespace util_v4l2{
+namespace util_v4l2 {
 
     struct buffer {
         void *start;
@@ -103,7 +103,7 @@ namespace util_v4l2{
         if (fd == -1) {
             // couldn't find capture device
             perror("Opening Video device");
-            SET_ERR_CODE(err,error_code ::ERR_CANNOT_OPEN_DEVICE);
+            SET_ERR_CODE(err, error_code::ERR_CANNOT_OPEN_DEVICE);
             return -1;
         }
         return fd;
@@ -114,7 +114,7 @@ namespace util_v4l2{
     ///////////////////////////////////////////////////////////////////////////////
 
 
-    void set_format(int fd , uint32_t width, uint32_t height,pixel_format format, error_code  *err) {
+    void set_format(int fd, uint32_t width, uint32_t height, pixel_format format, error_code *err) {
         struct v4l2_format fmt;
         unsigned int min;
         fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -134,7 +134,7 @@ namespace util_v4l2{
 
         // Buggy driver paranoia.
         min = fmt.fmt.pix.width * 2;
-        if (fmt.fmt.pix.bytesperline < min){
+        if (fmt.fmt.pix.bytesperline < min) {
             fmt.fmt.pix.bytesperline = min;
         }
 
@@ -145,12 +145,12 @@ namespace util_v4l2{
         }
 
         // Test Resolution was set correctly
-        if(width != fmt.fmt.pix.width || height != fmt.fmt.pix.height){
+        if (width != fmt.fmt.pix.width || height != fmt.fmt.pix.height) {
             SET_ERR_CODE(err, error_code::ERR_CANNOT_SET_FORMAT);
         }
 
         // Test format was set correctly
-        if(static_cast<__u32>(format) != fmt.fmt.pix.pixelformat){
+        if (static_cast<__u32>(format) != fmt.fmt.pix.pixelformat) {
             SET_ERR_CODE(err, error_code::ERR_CANNOT_SET_FORMAT);
         }
 
@@ -164,7 +164,7 @@ namespace util_v4l2{
         SET_ERR_CODE(err, error_code::ERR_NO_ERROR);
         struct v4l2_capability caps;
         if (-1 == util_v4l2::xioctl(fd, VIDIOC_QUERYCAP, &caps)) {
-            SET_ERR_CODE(err,error_code::ERR_QUERYING_CAP);
+            SET_ERR_CODE(err, error_code::ERR_QUERYING_CAP);
         }
         return caps;
     }
@@ -174,7 +174,7 @@ namespace util_v4l2{
     ///////////////////////////////////////////////////////////////////////////////
 
 
-    void printv4l2_capabilites(v4l2_capability cap){
+    void printv4l2_capabilites(v4l2_capability cap) {
 
         if (cap.device_caps & V4L2_CAP_VIDEO_CAPTURE) {
             std::cout << "V4L2_CAP_VIDEO_CAPTURE" << std::endl;
@@ -221,8 +221,8 @@ namespace util_v4l2{
             formats.push_back(fmt);
             fmt.index++;
         }
-        if(formats.size() == 0){
-            SET_ERR_CODE(err,error_code ::ERR_QUERYING_FORMAT);
+        if (formats.size() == 0) {
+            SET_ERR_CODE(err, error_code::ERR_QUERYING_FORMAT);
         }
         return formats;
     }
@@ -246,14 +246,14 @@ namespace util_v4l2{
 
             if (-1 == util_v4l2::xioctl(fd, VIDIOC_QBUF, &buf)) {
                 printf("ERROR: start_capturing VIDIOC_QBUF");
-                SET_ERR_CODE(err,error_code::ERR_VIDIOC_QBUF);
+                SET_ERR_CODE(err, error_code::ERR_VIDIOC_QBUF);
             }
 
         }
         type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        if (-1 == util_v4l2::xioctl(fd, VIDIOC_STREAMON, &type)){
+        if (-1 == util_v4l2::xioctl(fd, VIDIOC_STREAMON, &type)) {
             printf("ERROR: start_capturing VIDIOC_STREAMON");
-            SET_ERR_CODE(err,error_code::ERR_VIDIOC_STREAMON);
+            SET_ERR_CODE(err, error_code::ERR_VIDIOC_STREAMON);
         }
 
 
@@ -276,16 +276,16 @@ namespace util_v4l2{
         if (-1 == util_v4l2::xioctl(fd, VIDIOC_REQBUFS, &req)) {
             if (EINVAL == errno) {
                 printf("ERROR does not support memory mapping\n");
-                SET_ERR_CODE(err,error_code::ERR_NO_MMAP_SUPPORT);
+                SET_ERR_CODE(err, error_code::ERR_NO_MMAP_SUPPORT);
             } else {
                 printf("ERROR: VIDIOC_REQBUFS");
-                SET_ERR_CODE(err,error_code::ERR_VIDIO_REQBUFS);
+                SET_ERR_CODE(err, error_code::ERR_VIDIO_REQBUFS);
             }
         }
 
         if (req.count < 2) {
             fprintf(stderr, "Insufficient buffer memory\n");
-            SET_ERR_CODE(err,error_code::ERR_INSUFFICIENT_MEM);
+            SET_ERR_CODE(err, error_code::ERR_INSUFFICIENT_MEM);
         }
 
         //*ppBuffer = (buffer *) calloc(req.count, sizeof(buffer));
@@ -305,9 +305,9 @@ namespace util_v4l2{
             buf.memory = V4L2_MEMORY_MMAP;
             buf.index = i;
 
-            if (-1 == util_v4l2::xioctl(fd, VIDIOC_QUERYBUF, &buf)){
+            if (-1 == util_v4l2::xioctl(fd, VIDIOC_QUERYBUF, &buf)) {
                 printf("ERROR: VIDIOC_QUERYBUF");
-                SET_ERR_CODE(err,error_code::ERR_VIDIO_QUERYBUF);
+                SET_ERR_CODE(err, error_code::ERR_VIDIO_QUERYBUF);
             }
 
 
@@ -321,7 +321,7 @@ namespace util_v4l2{
 
             if (MAP_FAILED == (buffer[i]).start) {
                 printf("ERROR: mmap");
-                SET_ERR_CODE(err,error_code::ERR_MMAP_INIT);
+                SET_ERR_CODE(err, error_code::ERR_MMAP_INIT);
             }
         }
     }
@@ -646,15 +646,14 @@ namespace util_v4l2{
         }
     }
 
-    void raw_to_rgb(void* inBuff, int inBuffSize, void* outBuff, int outBuffSize, uint32_t numOfPixels, int bitPerPixel)
-    {
+    void
+    raw_to_rgb(void *inBuff, int inBuffSize, void *outBuff, int outBuffSize, uint32_t numOfPixels, int bitPerPixel) {
         auto dst = static_cast<uint8_t *>(outBuff);
 
         auto shift = bitPerPixel - 8;  //i.e. 10bit - 8bit(1 byte) = 2, 12bit - 8bit = 4
 
         auto tmp = static_cast<uint16_t *>(inBuff);
-        for (auto i = 0u; i < numOfPixels; i++)
-        {
+        for (auto i = 0u; i < numOfPixels; i++) {
             uint16_t temp = (*tmp++) >> shift; //12 bit shift 4, 10bit shift 2
             *dst++ = static_cast<uint8_t>(temp);
             *dst++ = static_cast<uint8_t>(temp);
@@ -662,8 +661,7 @@ namespace util_v4l2{
         }
     }
 
-    static void process_image(const void *p, int size)
-    {
+    static void process_image(const void *p, int size) {
         static uint32_t frame_number = 0;
         frame_number++;
 
@@ -680,7 +678,7 @@ namespace util_v4l2{
 //                640, 480);
 
         bool enable_stdout = true;
-        if (enable_stdout){
+        if (enable_stdout) {
             //fwrite(outBuff, 921600, 1, fp);
             fwrite(outBuff, 921600, 1, stdout);
         }
@@ -690,7 +688,8 @@ namespace util_v4l2{
 //        fclose(fp);
     }
 
-    static int read_frame(int fd, util_v4l2::buffer *pBuffer, std::function<void(uint8_t* p_data, size_t len)> callback) {
+    static int
+    read_frame(int fd, util_v4l2::buffer *pBuffer, std::function<void(uint8_t *p_data, size_t len)> callback) {
         struct v4l2_buffer buf;
 
         UTIL_CLEAR(buf);
@@ -709,7 +708,7 @@ namespace util_v4l2{
                     /* fall through */
 
                 default:
-                    printf("ERROR: read_frame VIDIOC_DQBUF\n");
+                std::cerr << "ERROR: read_frame VIDIOC_DQBUF\n";
                     return -1;
                     break;
 
@@ -718,55 +717,56 @@ namespace util_v4l2{
 
         assert(buf.index < 4);
 
-        callback((uint8_t*)pBuffer[buf.index].start, buf.bytesused);
+        callback((uint8_t *) pBuffer[buf.index].start, buf.bytesused);
 
-        if (-1 == util_v4l2::xioctl(fd, VIDIOC_QBUF, &buf))
-        {
+        if (-1 == util_v4l2::xioctl(fd, VIDIOC_QBUF, &buf)) {
             printf("ERROR: read_frame VIDIOC_DQBUF\n");
             return -1;
         }
 
-        return 1;
+        return 0;
     }
 
-    static void mainloop(int fd, util_v4l2::buffer *pBuffer, std::function<void(uint8_t* p_data, size_t len)> callback) {
+    static void
+    mainloop(int fd, util_v4l2::buffer *pBuffer, std::function<void(uint8_t *p_data, size_t len)> callback, error_code* err) {
 
-        while (1){
-            for (;;) {
-                fd_set fds;
-                struct timeval tv;
-                int r;
+        for (;;) {
+            fd_set fds;
+            struct timeval tv;
+            int r;
 
-                FD_ZERO(&fds);
-                FD_SET(fd, &fds);
+            FD_ZERO(&fds);
+            FD_SET(fd, &fds);
 
-                /* Timeout. */
-                tv.tv_sec = 5;
-                tv.tv_usec = 0;
+            /* Timeout. */
+            tv.tv_sec = 5;
+            tv.tv_usec = 0;
 
-                r = select(fd + 1, &fds, NULL, NULL, &tv);
+            r = select(fd + 1, &fds, NULL, NULL, &tv);
 
-                if (-1 == r) {
-                    if (EINTR == errno)
-                        continue;
+            if (-1 == r) {
+                if (EINTR == errno)
+                    continue;
 
-                    printf("ERROR: select");
-                    return;
-                }
-
-                if (0 == r) {
-                    fprintf(stderr, "ERROR: select timeout\n");
-                    exit(EXIT_FAILURE);
-                }
-
-                if (read_frame(fd, pBuffer, callback)){
-                    break;
-                }
-
-
-                /* EAGAIN - continue select loop. */
+                printf("ERROR: select");
+                return;
             }
+
+            if (0 == r) {
+                fprintf(stderr, "ERROR: select timeout\n");
+                exit(EXIT_FAILURE);
+            }
+
+            if (read_frame(fd, pBuffer, callback) == -1) {
+                SET_ERR_CODE(err,error_code::ERR_READ_FRAME);
+                // exit loop
+                break;
+            }
+
+
+            /* EAGAIN - continue select loop. */
         }
+
     }
 
 }// namespace util_v4l2
