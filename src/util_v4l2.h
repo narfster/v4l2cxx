@@ -46,7 +46,9 @@ enum class error_code {
     ERR_VIDIO_QUERYBUF,
     ERR_VIDIOC_S_FMT,
     ERR_VIDIOC_G_FMT,
-    ERR_READ_FRAME
+    ERR_READ_FRAME,
+    ERR_SELECT_TIMEOUT,
+    ERR_SELECT,
 };
 
 void print_err_code(error_code err) {
@@ -742,31 +744,37 @@ namespace util_v4l2 {
             tv.tv_sec = 5;
             tv.tv_usec = 0;
 
+//            On success, select() return the number of file
+//            descriptors contained in the three returned descriptor sets (that is,
+//                    the total number of bits that are set in readfds, writefds,
+//            exceptfds) which may be zero if the timeout expires before anything
+//            interesting happens.  On error, -1 is returned, and errno is set to
+//            indicate the error; the file descriptor sets are unmodified, and
+//            timeout becomes undefined.
             r = select(fd + 1, &fds, NULL, NULL, &tv);
 
             if (-1 == r) {
-                if (EINTR == errno)
+                if (EINTR == errno){
                     continue;
+                }
 
-                printf("ERROR: select");
+                SET_ERR_CODE(err,error_code::ERR_SELECT);
                 return;
             }
 
             if (0 == r) {
-                fprintf(stderr, "ERROR: select timeout\n");
-                exit(EXIT_FAILURE);
+                std::cerr << "ERROR: select timeout\n";
+                SET_ERR_CODE(err,error_code::ERR_SELECT_TIMEOUT);
             }
 
             if (read_frame(fd, pBuffer, callback) == -1) {
                 SET_ERR_CODE(err,error_code::ERR_READ_FRAME);
                 // exit loop
-                break;
+                return;
             }
 
-
-            /* EAGAIN - continue select loop. */
+            /* EAGAIN (try again) - continue select loop. */
         }
-
     }
 
 }// namespace util_v4l2
