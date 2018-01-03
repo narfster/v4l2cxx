@@ -161,6 +161,22 @@ namespace util_v4l2 {
     ///////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////
+    void set_v4l2_buff_type(int fd, error_code *err){
+        SET_ERR_CODE(err,error_code::ERR_NO_ERROR);
+        enum v4l2_buf_type type;
+        type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        if (-1 == util_v4l2::xioctl(fd, VIDIOC_STREAMON, &type)) {
+            std::cerr << "ERROR: start_capturing VIDIOC_STREAMON\n";
+            SET_ERR_CODE(err,error_code::ERR_NO_ERROR);
+        }
+
+    }
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
     v4l2_capability query_capabilites(int fd, error_code *err) {
         SET_ERR_CODE(err, error_code::ERR_NO_ERROR);
@@ -171,6 +187,55 @@ namespace util_v4l2 {
         return caps;
     }
 
+    ///////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////
+
+    int read_one_frame(int fd, util_v4l2::buffer *pBuffer, std::function<void(uint8_t *p_data, size_t len)> callback, error_code *err){
+        SET_ERR_CODE(err,error_code::ERR_NO_ERROR);
+        struct v4l2_buffer buf;
+
+
+        UTIL_CLEAR(buf);
+        buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        buf.memory = V4L2_MEMORY_MMAP;
+        buf.index = 0;
+
+        if (-1 == util_v4l2::xioctl(fd, VIDIOC_QBUF, &buf)) {
+            printf("ERROR: start_capturing VIDIOC_QBUF");
+            SET_ERR_CODE(err,error_code::ERR_READ_FRAME);
+        }
+
+        UTIL_CLEAR(buf);
+        buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        buf.memory = V4L2_MEMORY_MMAP;
+
+        if (-1 == util_v4l2::xioctl(fd, VIDIOC_DQBUF, &buf)) {
+            SET_ERR_CODE(err,error_code::ERR_READ_FRAME);
+            switch (errno) {
+                case EAGAIN:
+                    // (try again)
+                    return 0;
+
+                case EIO:
+                    // I/O error
+                    /* fall through */
+
+                default:
+                    std::cerr << "ERROR: read_frame VIDIOC_DQBUF\n";
+                    return -1;
+                    break;
+
+            }
+        }
+
+        assert(buf.index < 4);
+        int numOfBytes = 0;
+        numOfBytes = buf.bytesused;
+        callback((uint8_t *) pBuffer[buf.index].start, buf.bytesused);
+
+        return numOfBytes;
+    }
     ///////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////
@@ -238,6 +303,7 @@ namespace util_v4l2 {
         unsigned int i;
         enum v4l2_buf_type type;
 
+        // Queue into all MMAP buffers from capture device.
         for (i = 0; i < numOfBuffers; ++i) {
             struct v4l2_buffer buf;
 
@@ -250,15 +316,37 @@ namespace util_v4l2 {
                 printf("ERROR: start_capturing VIDIOC_QBUF");
                 SET_ERR_CODE(err, error_code::ERR_VIDIOC_QBUF);
             }
+        }
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////
+
+    static void stop_capturing(int fd, uint32_t numOfBuffers, error_code *err) {
+        SET_ERR_CODE(err, error_code::ERR_NO_ERROR);
+        unsigned int i;
+        enum v4l2_buf_type type;
+
+        for (i = 0; i < numOfBuffers; ++i) {
+            struct v4l2_buffer buf;
+
+            UTIL_CLEAR(buf);
+            buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+            buf.memory = V4L2_MEMORY_MMAP;
+            buf.index = i;
+
+//            if (-1 == util_v4l2::xioctl(fd, VIDIOC_DQBUF, &buf)) {
+//                printf("ERROR: start_capturing VIDIOC_DQBUF");
+//                SET_ERR_CODE(err, error_code::ERR_VIDIOC_QBUF);
+//            }
 
         }
         type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        if (-1 == util_v4l2::xioctl(fd, VIDIOC_STREAMON, &type)) {
+        if (-1 == util_v4l2::xioctl(fd, VIDIOC_STREAMOFF, &type)) {
             printf("ERROR: start_capturing VIDIOC_STREAMON");
-            SET_ERR_CODE(err, error_code::ERR_VIDIOC_STREAMON);
+            //SET_ERR_CODE(err, error_code::VIDIOC_STREAMOFF);
         }
-
-
     }
 
     ///////////////////////////////////////////////////////////////////////////////
@@ -648,6 +736,10 @@ namespace util_v4l2 {
         }
     }
 
+    ///////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////
+
     void
     raw_to_rgb(void *inBuff, int inBuffSize, void *outBuff, int outBuffSize, uint32_t numOfPixels, int bitPerPixel) {
         auto dst = static_cast<uint8_t *>(outBuff);
@@ -662,6 +754,10 @@ namespace util_v4l2 {
             *dst++ = static_cast<uint8_t>(temp);
         }
     }
+
+    ///////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////
 
     static void process_image(const void *p, int size) {
         static uint32_t frame_number = 0;
@@ -690,27 +786,35 @@ namespace util_v4l2 {
 //        fclose(fp);
     }
 
-    static int
-    read_frame(int fd, util_v4l2::buffer *pBuffer, std::function<void(uint8_t *p_data, size_t len)> callback) {
-        struct v4l2_buffer buf;
+    ///////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////
 
+    static int
+    read_frame(int fd, util_v4l2::buffer *pBuffer, std::function<void(uint8_t *p_data, size_t len)> callback,
+               error_code *err) {
+        SET_ERR_CODE(err, error_code::ERR_NO_ERROR);
+        int numOfBytes = 0;
+
+        struct v4l2_buffer buf;
         UTIL_CLEAR(buf);
 
         buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         buf.memory = V4L2_MEMORY_MMAP;
 
         if (-1 == util_v4l2::xioctl(fd, VIDIOC_DQBUF, &buf)) {
+            SET_ERR_CODE(err, error_code::ERR_READ_FRAME);
             switch (errno) {
                 case EAGAIN:
+                    // (try again)
                     return 0;
 
                 case EIO:
-                    /* Could ignore EIO, see spec. */
-
+                    // I/O error
                     /* fall through */
 
                 default:
-                std::cerr << "ERROR: read_frame VIDIOC_DQBUF\n";
+                    std::cerr << "ERROR: read_frame VIDIOC_DQBUF\n";
                     return -1;
                     break;
 
@@ -722,15 +826,22 @@ namespace util_v4l2 {
         callback((uint8_t *) pBuffer[buf.index].start, buf.bytesused);
 
         if (-1 == util_v4l2::xioctl(fd, VIDIOC_QBUF, &buf)) {
-            printf("ERROR: read_frame VIDIOC_DQBUF\n");
+            std::cerr << "ERROR: read_frame VIDIOC_DQBUF\n";
+            SET_ERR_CODE(err, error_code::ERR_READ_FRAME);
             return -1;
         }
 
-        return 0;
+        numOfBytes = buf.bytesused;
+        return numOfBytes;
     }
 
+    ///////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////
+
     static void
-    mainloop(int fd, util_v4l2::buffer *pBuffer, std::function<void(uint8_t *p_data, size_t len)> callback, error_code* err) {
+    mainloop(int fd, util_v4l2::buffer *pBuffer, std::function<void(uint8_t *p_data, size_t len)> callback,
+             error_code *err) {
 
         for (;;) {
             fd_set fds;
@@ -754,21 +865,21 @@ namespace util_v4l2 {
             r = select(fd + 1, &fds, NULL, NULL, &tv);
 
             if (-1 == r) {
-                if (EINTR == errno){
+                if (EINTR == errno) {
                     continue;
                 }
 
-                SET_ERR_CODE(err,error_code::ERR_SELECT);
+                SET_ERR_CODE(err, error_code::ERR_SELECT);
                 return;
             }
 
             if (0 == r) {
                 std::cerr << "ERROR: select timeout\n";
-                SET_ERR_CODE(err,error_code::ERR_SELECT_TIMEOUT);
+                SET_ERR_CODE(err, error_code::ERR_SELECT_TIMEOUT);
             }
 
-            if (read_frame(fd, pBuffer, callback) == -1) {
-                SET_ERR_CODE(err,error_code::ERR_READ_FRAME);
+            if (read_frame(fd, pBuffer, callback,err) == -1) {
+                SET_ERR_CODE(err, error_code::ERR_READ_FRAME);
                 // exit loop
                 return;
             }

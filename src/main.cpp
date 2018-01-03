@@ -1,6 +1,7 @@
 #include "v4l2cxx.h"
 
-
+#include <chrono>
+#include <thread>
 
 void callback_stdout_pipe(uint8_t *p_data, size_t len) {
 
@@ -11,10 +12,17 @@ void callback_stdout_pipe(uint8_t *p_data, size_t len) {
 
 int main(){
 
-    //capture cap("/dev/video0", 640,480,pixel_format ::V4L2CXX_PIX_FMT_YUYV,callback_stdout_pipe);
-    capture cap("/dev/video0", callback_stdout_pipe);
-    cap.set_format(640,480,pixel_format ::V4L2CXX_PIX_FMT_YUYV);
+    capture cap("/dev/video0", 640,480,pixel_format ::V4L2CXX_PIX_FMT_YUYV,callback_stdout_pipe);
+//    capture cap("/dev/video0", callback_stdout_pipe);
+//    cap.set_format(640,480,pixel_format ::V4L2CXX_PIX_FMT_YUYV);
     cap.run();
+
+//
+//    while(1){
+//        cap.read();
+//        std::this_thread::sleep_for(std::chrono::milliseconds(16));
+//    }
+
 
 }
 
