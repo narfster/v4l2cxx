@@ -18,6 +18,7 @@
 #include <unistd.h>
 #include <cerrno>
 #include <iostream>
+#include <functional>
 
 
 #define UTIL_CLEAR(x) memset(&(x), 0, sizeof(x))
@@ -70,6 +71,8 @@ enum class pixel_format{
     V4L2CXX_PIX_FMT_MJPEG = V4L2_PIX_FMT_MJPEG
 
 };
+
+class function;
 namespace util_v4l2{
 
     struct buffer {
@@ -676,7 +679,7 @@ namespace util_v4l2{
 //        fclose(fp);
     }
 
-    static int read_frame(int fd, util_v4l2::buffer *pBuffer) {
+    static int read_frame(int fd, util_v4l2::buffer *pBuffer, std::function<void(uint8_t* p_data, size_t len)> callback) {
         struct v4l2_buffer buf;
 
         UTIL_CLEAR(buf);
@@ -704,7 +707,7 @@ namespace util_v4l2{
 
         assert(buf.index < 4);
 
-        process_image(pBuffer[buf.index].start, buf.bytesused);
+        callback((uint8_t*)pBuffer[buf.index].start, buf.bytesused);
 
         if (-1 == util_v4l2::xioctl(fd, VIDIOC_QBUF, &buf))
         {
@@ -715,7 +718,7 @@ namespace util_v4l2{
         return 1;
     }
 
-    static void mainloop(int fd, util_v4l2::buffer *pBuffer) {
+    static void mainloop(int fd, util_v4l2::buffer *pBuffer, std::function<void(uint8_t* p_data, size_t len)> callback) {
 
         while (1){
             for (;;) {
@@ -745,8 +748,10 @@ namespace util_v4l2{
                     exit(EXIT_FAILURE);
                 }
 
-                if (read_frame(fd, pBuffer))
+                if (read_frame(fd, pBuffer, callback)){
                     break;
+                }
+
 
                 /* EAGAIN - continue select loop. */
             }
