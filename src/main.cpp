@@ -39,11 +39,12 @@ int main(){
 
     error_code err = error_code::ERR_NO_ERROR;
 
-    int fd = util_v4l2::open_device("/dev/video1", &err);
+    int fd = util_v4l2::open_device("/dev/video0", &err);
     ASSERT_ERR_CODE(err);
 
-    v4l2cxx::get_video_formats_ext(fd);
+    auto vec = v4l2cxx::get_video_formats_ext(fd);
 
+    v4l2cxx::print_fmt_ext(vec);
 
 //    auto cap = util_v4l2::query_capabilites(fd, &err);
 //
