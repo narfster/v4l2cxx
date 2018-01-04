@@ -4,24 +4,128 @@
 
 #pragma once
 
-#include <iostream>
-#include <linux/videodev2.h>
-#include <fcntl.h>
-#include <sys/ioctl.h>
-#include <cstring>
-#include <vector>
-#include <sys/mman.h>
-#include <cassert>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <sys/time.h>
-#include <cerrno>
-#include <unistd.h>
-#include "util_v4l2.h"
-#include "capture.h"
 
-#define CLEAR(x) memset(&(x), 0, sizeof(x))
+#include "util_v4l2.h"
+
+
+namespace v4l2cxx {
+
+
+    struct v4l2_frm_size_t {
+        // Original frame size enum
+        v4l2_frmsizeenum frmsize;
+
+        // holds possiable frame intervals
+        struct std::vector<v4l2_frmivalenum> frmival;
+    };
+
+    struct vid_cap_fmt_ext {
+
+        vid_cap_fmt_ext(v4l2_fmtdesc fmt) : v4l2_fmt_desc_(fmt) {
+            // convert to string repesnation.
+            description = std::string((char *) fmt.description);
+            fourcc_format = util_v4l2::fcc2s(fmt.pixelformat);
+            if (fmt.flags) {
+                flags = util_v4l2::fmtdesc2s(fmt.flags);
+            }
+            type = util_v4l2::buftype2s(fmt.type);
+
+            format_index = fmt.index;
+        }
+
+        // Original v4l2 format description.
+        struct v4l2_fmtdesc v4l2_fmt_desc_;
+
+        // possiable sizes for format.
+        std::vector<v4l2_frm_size_t> v4l2_frm_sizes_;
+
+        int format_index;
+        std::string description;
+        std::string fourcc_format;
+        std::string flags;
+        std::string type;
+    };
+
+    static void print_fmt_ext(std::vector<vid_cap_fmt_ext> vid_formats){
+
+        // Run on all format descriptions.
+        for(int i = 0; i<vid_formats.size(); ++i){
+
+            util_v4l2::print_fmt_desc(vid_formats[i].v4l2_fmt_desc_);
+
+            // Run on all sizes
+            for(int j = 0; j<vid_formats[i].v4l2_frm_sizes_.size(); ++j){
+
+                auto e = vid_formats[i].v4l2_frm_sizes_[j].frmsize;
+                util_v4l2::print_frmsize(e, "\t");
+
+                // Run on all intervals
+                for(int k = 0; k< vid_formats[i].v4l2_frm_sizes_[j].frmival.size();++k){
+
+                    auto e = vid_formats[i].v4l2_frm_sizes_[j].frmival[k];
+                    util_v4l2::print_frmival(e, "\t\t");
+                }
+            }
+        }
+    }
+
+
+
+    static void get_video_formats_ext(int fd) {
+        struct v4l2_fmtdesc fmt;
+        struct v4l2_frmsizeenum frmsize;
+        struct v4l2_frmivalenum frmival;
+
+        std::vector<vid_cap_fmt_ext> vid_formats;   // results stored here.
+
+        fmt.index = 0;
+        fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        while (util_v4l2::xioctl(fd, VIDIOC_ENUM_FMT, &fmt) >= 0) {
+
+            vid_cap_fmt_ext current_fmt(fmt);
+            // Save format description
+            //current_fmt.fmt = fmt;
+
+            frmsize.pixel_format = fmt.pixelformat;
+            frmsize.index = 0;
+            while (util_v4l2::xioctl(fd, VIDIOC_ENUM_FRAMESIZES, &frmsize) >= 0) {
+
+                v4l2_frm_size_t vid_cap_frm_size;
+                vid_cap_frm_size.frmsize = frmsize;
+
+                if (frmsize.type == V4L2_FRMSIZE_TYPE_DISCRETE) {
+                    frmival.index = 0;
+                    frmival.pixel_format = fmt.pixelformat;
+                    frmival.width = frmsize.discrete.width;
+                    frmival.height = frmsize.discrete.height;
+                    while (util_v4l2::xioctl(fd, VIDIOC_ENUM_FRAMEINTERVALS, &frmival) >= 0) {
+
+                        // Save frame interval data
+                        vid_cap_frm_size.frmival.push_back(frmival);
+                        frmival.index++;
+                    }
+                }
+                current_fmt.v4l2_frm_sizes_.push_back(vid_cap_frm_size);
+                frmsize.index++;
+            }
+            // Save current video format
+            vid_formats.push_back(current_fmt);
+            fmt.index++;
+        }
+
+        //test print
+        print_fmt_ext(vid_formats);
+    }
+
+}
+
+
+
+
+
+
+
+
 
 
 #if 0

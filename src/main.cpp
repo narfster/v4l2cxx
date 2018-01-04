@@ -9,7 +9,7 @@
 void callback_stdout_pipe(uint8_t *p_data, size_t len) {
 
     uint8_t outBuff[921600];
-    util_v4l2::raw_to_rgb(p_data, 0, outBuff, 921600, 640 * 480, 8);
+    util_v4l2::raw_to_rgb(p_data, 0, outBuff, 921600, 640 * 480, 10);
     fwrite(outBuff, 921600, 1, stdout);
 }
 
@@ -19,7 +19,7 @@ int main(){
     ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 #if (TEST_RUN == 1)
-    capture cap("/dev/video0", 640,480,pixel_format ::V4L2CXX_PIX_FMT_YUYV,callback_stdout_pipe);
+    capture cap("/dev/video1", 640,480,pixel_format ::V4L2CXX_PIX_FMT_YUYV,callback_stdout_pipe);
     cap.run();
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -39,26 +39,29 @@ int main(){
 
     error_code err = error_code::ERR_NO_ERROR;
 
-    int fd = util_v4l2::open_device("/dev/video0", &err);
+    int fd = util_v4l2::open_device("/dev/video1", &err);
     ASSERT_ERR_CODE(err);
 
-    auto cap = util_v4l2::query_capabilites(fd, &err);
+    v4l2cxx::get_video_formats_ext(fd);
 
-    auto vec = util_v4l2::query_formats(fd, &err);
 
-    util_v4l2::set_format(fd, 640, 480, pixel_format::V4L2CXX_PIX_FMT_YVYU, &err);
-
-    auto vec_format = util_v4l2::get_current_format(fd, &err);
-
-    //util_v4l2::printv4l2_fmt(vec_format);
-
-    util_v4l2::init_mmap(fd, buffers, &err);
-
-    util_v4l2::set_capture_steamon(fd,&err);
-
-    util_v4l2::queue_frames(fd, 4, &err);
-
-    util_v4l2::mainloop(fd, buffers, callback_stdout_pipe,&err);
+//    auto cap = util_v4l2::query_capabilites(fd, &err);
+//
+//    auto vec = util_v4l2::query_formats(fd, &err);
+//
+//    util_v4l2::set_format(fd, 640, 480, pixel_format::V4L2CXX_PIX_FMT_YVYU, &err);
+//
+//    auto vec_format = util_v4l2::get_current_format(fd, &err);
+//
+//    //util_v4l2::printv4l2_fmt(vec_format);
+//
+//    util_v4l2::init_mmap(fd, buffers, &err);
+//
+//    util_v4l2::set_capture_steamon(fd,&err);
+//
+//    util_v4l2::queue_frames(fd, 4, &err);
+//
+//    util_v4l2::mainloop(fd, buffers, callback_stdout_pipe,&err);
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////
 

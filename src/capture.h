@@ -1,5 +1,6 @@
 #pragma once
 
+#include "v4l2cxx.h"
 class capture {
 
 public:
@@ -36,6 +37,21 @@ public:
 
         util_v4l2::set_capture_steamon(fd_, &err_);
         ASSERT_ERR_CODE(err_);
+
+        auto formats = util_v4l2::query_formats(fd_,nullptr);
+
+
+
+
+        v4l2_format format1;
+        format1.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+
+        if (-1 == util_v4l2::xioctl(fd_, VIDIOC_G_FMT, &format1)) {
+
+
+
+        }
+        int x = 5;
 
     }
 

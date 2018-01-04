@@ -18,6 +18,7 @@
 #include <unistd.h>
 #include <cerrno>
 #include <iostream>
+#include <cassert>
 #include <functional>
 
 
@@ -752,6 +753,149 @@ namespace util_v4l2 {
     ///////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////
 
+    static std::string fract2sec(const struct v4l2_fract &f)
+    {
+        char buf[100];
+
+        sprintf(buf, "%.3f", (1.0 * f.numerator) / f.denominator);
+        return buf;
+    }
+
+    static std::string fract2fps(const struct v4l2_fract &f)
+    {
+        char buf[100];
+
+        sprintf(buf, "%.3f", (1.0 * f.denominator) / f.numerator);
+        return buf;
+    }
+
+    static std::string frmtype2s(unsigned type)
+    {
+        static const char *types[] = {
+                "Unknown",
+                "Discrete",
+                "Continuous",
+                "Stepwise"
+        };
+
+        if (type > 3)
+            type = 0;
+        return types[type];
+    }
+
+    static void print_frmival(const struct v4l2_frmivalenum &frmival, const char *prefix)
+    {
+        printf("%s\tInterval: %s ", prefix, frmtype2s(frmival.type).c_str());
+        if (frmival.type == V4L2_FRMIVAL_TYPE_DISCRETE) {
+            printf("%ss (%s fps)\n", fract2sec(frmival.discrete).c_str(),
+                   fract2fps(frmival.discrete).c_str());
+        } else if (frmival.type == V4L2_FRMIVAL_TYPE_CONTINUOUS) {
+            printf("%ss - %ss (%s-%s fps)\n",
+                   fract2sec(frmival.stepwise.min).c_str(),
+                   fract2sec(frmival.stepwise.max).c_str(),
+                   fract2fps(frmival.stepwise.max).c_str(),
+                   fract2fps(frmival.stepwise.min).c_str());
+        } else if (frmival.type == V4L2_FRMIVAL_TYPE_STEPWISE) {
+            printf("%ss - %ss with step %ss (%s-%s fps)\n",
+                   fract2sec(frmival.stepwise.min).c_str(),
+                   fract2sec(frmival.stepwise.max).c_str(),
+                   fract2sec(frmival.stepwise.step).c_str(),
+                   fract2fps(frmival.stepwise.max).c_str(),
+                   fract2fps(frmival.stepwise.min).c_str());
+        }
+    }
+
+    static void print_frmsize(const struct v4l2_frmsizeenum &frmsize, const char *prefix)
+    {
+        printf("%s\tSize: %s ", prefix, frmtype2s(frmsize.type).c_str());
+        if (frmsize.type == V4L2_FRMSIZE_TYPE_DISCRETE) {
+            printf("%dx%d", frmsize.discrete.width, frmsize.discrete.height);
+        } else if (frmsize.type == V4L2_FRMSIZE_TYPE_STEPWISE) {
+            printf("%dx%d - %dx%d with step %d/%d",
+                   frmsize.stepwise.min_width,
+                   frmsize.stepwise.min_height,
+                   frmsize.stepwise.max_width,
+                   frmsize.stepwise.max_height,
+                   frmsize.stepwise.step_width,
+                   frmsize.stepwise.step_height);
+        }
+        printf("\n");
+    }
+
+    static const flag_def fmtdesc_def[] = {
+            { V4L2_FMT_FLAG_COMPRESSED, "compressed" },
+            { V4L2_FMT_FLAG_EMULATED, "emulated" },
+            { 0, NULL }
+    };
+
+    std::string fmtdesc2s(unsigned flags)
+    {
+        return flags2s(flags, fmtdesc_def);
+    }
+
+    static void print_video_formats_ext(int fd, __u32 type)
+    {
+        struct v4l2_fmtdesc fmt;
+        struct v4l2_frmsizeenum frmsize;
+        struct v4l2_frmivalenum frmival;
+
+        fmt.index = 0;
+        fmt.type = type;
+        while (xioctl(fd, VIDIOC_ENUM_FMT, &fmt) >= 0) {
+            printf("\tIndex       : %d\n", fmt.index);
+            printf("\tType        : %s\n", buftype2s(type).c_str());
+            printf("\tPixel Format: '%s'", fcc2s(fmt.pixelformat).c_str());
+            if (fmt.flags)
+                printf(" (%s)", fmtdesc2s(fmt.flags).c_str());
+            printf("\n");
+            printf("\tName        : %s\n", fmt.description);
+            frmsize.pixel_format = fmt.pixelformat;
+            frmsize.index = 0;
+            while (xioctl(fd, VIDIOC_ENUM_FRAMESIZES, &frmsize) >= 0) {
+                print_frmsize(frmsize, "\t");
+                if (frmsize.type == V4L2_FRMSIZE_TYPE_DISCRETE) {
+                    frmival.index = 0;
+                    frmival.pixel_format = fmt.pixelformat;
+                    frmival.width = frmsize.discrete.width;
+                    frmival.height = frmsize.discrete.height;
+                    while (xioctl(fd, VIDIOC_ENUM_FRAMEINTERVALS, &frmival) >= 0) {
+                        print_frmival(frmival, "\t\t");
+                        frmival.index++;
+                    }
+                }
+                frmsize.index++;
+            }
+            printf("\n");
+            fmt.index++;
+        }
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////
+
+
+    static void print_fmt_desc(v4l2_fmtdesc fmt){
+        printf("\tIndex       : %d\n", fmt.index);
+        printf("\tType        : %s\n", buftype2s(V4L2_BUF_TYPE_VIDEO_CAPTURE).c_str());
+        printf("\tPixel Format: '%s'", fcc2s(fmt.pixelformat).c_str());
+        if (fmt.flags)
+            printf(" (%s)", fmtdesc2s(fmt.flags).c_str());
+        printf("\n");
+        printf("\tName        : %s\n", fmt.description);
+    }
+
+
+
+
+
+
+
+
+    ///////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////
+
     void
     raw_to_rgb(void *inBuff, int inBuffSize, void *outBuff, int outBuffSize, uint32_t numOfPixels, int bitPerPixel) {
         auto dst = static_cast<uint8_t *>(outBuff);
@@ -855,7 +999,15 @@ namespace util_v4l2 {
     mainloop(int fd, util_v4l2::buffer *pBuffer, std::function<void(uint8_t *p_data, size_t len)> callback,
              error_code *err) {
 
+//        int num_of_frames = 200;
+
         for (;;) {
+//            if(num_of_frames < 0)
+//                return;
+
+//            std::cerr << num_of_frames <<"  \n";
+//            num_of_frames--;
+
             fd_set fds;
             struct timeval tv;
             int r;
