@@ -21,12 +21,16 @@ namespace v4l2cxx {
                 frmsize_stepwise_ = frmsize.stepwise;
             }
             frame_size_num = frmsize.index;
+            type_= util_v4l2::frmtype2s(frmsize_.type);
+
+            fourcc_format_ = util_v4l2::fcc2s(frmsize_.pixel_format);
         }
 
         // Original frame size enum data
         v4l2_frmsizeenum frmsize_;
 
-        std::string type_ = util_v4l2::frmtype2s(frmsize_.type);
+        std::string type_;
+        std::string fourcc_format_;
         int frame_size_num;
         v4l2_frmsize_discrete frmsize_discrete_;
         v4l2_frmsize_stepwise frmsize_stepwise_;
