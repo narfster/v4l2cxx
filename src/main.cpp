@@ -1,16 +1,14 @@
 #include "v4l2cxx.h"
-
-#include <chrono>
-#include <thread>
+#include "capture.h"
 
 
-#define TEST_RUN (3)
+#define TEST_RUN (1)
 
 void callback_stdout_pipe(uint8_t *p_data, size_t len) {
 
     uint8_t outBuff[921600];
-    util_v4l2::raw_to_rgb(p_data, 0, outBuff, 921600, 640 * 480, 10);
-    fwrite(outBuff, 921600, 1, stdout);
+    util_v4l2::raw_to_rgb(p_data, 0, outBuff, 921600, 640 * 480, 8);
+    fwrite(outBuff, 640*480*3, 1, stdout);
 }
 
 
@@ -19,7 +17,7 @@ int main(){
     ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 #if (TEST_RUN == 1)
-    capture cap("/dev/video1", 640,480,pixel_format ::V4L2CXX_PIX_FMT_YUYV,callback_stdout_pipe);
+    capture cap("/dev/video0", 640,480,pixel_format ::V4L2CXX_PIX_FMT_YUYV,callback_stdout_pipe);
     cap.run();
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////
