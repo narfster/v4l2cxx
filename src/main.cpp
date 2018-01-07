@@ -1,5 +1,7 @@
 #include "v4l2cxx.h"
 #include "capture.h"
+#include <chrono>
+#include <thread>
 
 
 #define TEST_RUN (1)
