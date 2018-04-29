@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 
 
-set(SOURCE_FILES src/main.cpp src/v4l2cxx.h src/util_v4l2.h src/capture.h)
+set(SOURCE_FILES examples/main.cpp)
 add_executable(libv4l2cxx ${SOURCE_FILES})
 
 set(EXAMPLE1_FILES examples/example1.cpp )

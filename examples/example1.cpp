@@ -3,9 +3,8 @@
 //
 
 #include "../src/v4l2cxx.h"
-#include "../src/capture.h"
-#include <chrono>
-#include <thread>
+
+
 
 void callback_stdout_pipe(uint8_t *p_data, size_t len) {
 
