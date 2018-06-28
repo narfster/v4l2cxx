@@ -6,7 +6,8 @@
 
 
 #include "util_v4l2.h"
-
+#include <linux/uvcvideo.h>
+#include <linux/usb/video.h>
 
 namespace v4l2cxx {
 
@@ -136,6 +137,94 @@ namespace v4l2cxx {
         return capture_formats;
     }
 
+
+
+
+    // NEED TO CLEAN UP
+
+
+    // hanle the error for opening the device
+    void error_handle()
+    {
+        int res = errno;
+
+        const char *err;
+        switch(res)
+        {
+            case ENOENT:	err = "Extension unit or control not found"; break;
+            case ENOBUFS:	err = "Buffer size does not match control size"; break;
+            case EINVAL:	err = "Invalid request code"; break;
+            case EBADRQC:	err = "Request not supported by control"; break;
+            default:		err = strerror(res); break;
+        }
+
+        printf("failed %s. (System code: %d) \n", err, res);
+
+
+        return ;
+
+
+    }
+
+    unsigned char value[64] = {0};
+    // define the Leopard Imaging USB3.0 camera
+    // uvc extension i
+
+#define CY_FX_UVC_XU_TRIGGER_ENABLE (0x0b00)
+#define XU_EXPOSURE_TIME  (0x06);
+
+
+// define the xu query struct
+    struct uvc_xu_control_query xu_query =
+            {
+                    .unit		= 3, //has to be unit 3
+                    .selector	= 1, //TD
+                    .query		= UVC_SET_CUR,
+                    .size		= 4, //TD
+                    .data		= value,
+            };
+
+
+
+
+    void leocam_trigger_enable(int fd)
+    {
+        xu_query.selector = CY_FX_UVC_XU_TRIGGER_ENABLE>>8;
+        xu_query.query = UVC_SET_CUR;
+        xu_query.size = 2;
+
+        //Trigger mode enable
+        value[0] = 0x01;
+        value[1] = 0x00;
+        if(ioctl(fd, UVCIOC_CTRL_QUERY, &xu_query) != 0) error_handle();
+
+    }
+
+    void leocam_trigger_disable(int fd)
+    {
+        xu_query.selector = CY_FX_UVC_XU_TRIGGER_ENABLE>>8;
+        xu_query.query = UVC_SET_CUR;
+        xu_query.size = 2;
+
+        value[0] = 0x00;
+        value[1] = 0x00;
+        if(ioctl(fd, UVCIOC_CTRL_QUERY, &xu_query) != 0) error_handle();
+
+    }
+
+    void leocam_set_exposure(int fd, uint32_t exposure)
+    {
+        xu_query.selector = XU_EXPOSURE_TIME;
+        xu_query.query = UVC_SET_CUR;
+        xu_query.size = 2;
+
+        value[0] = (uint8_t)(exposure);
+        value[1] = (uint8_t)(exposure >> 8);
+        if(ioctl(fd, UVCIOC_CTRL_QUERY, &xu_query) != 0) error_handle();
+
+    }
+
+
 }//namespace
 
 
@@ -236,6 +325,11 @@ public:
     ///////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////
+
+
+    void set_exposure(uint32_t exposure){
+        v4l2cxx::leocam_set_exposure(fd_,exposure);
+    }
 
 private:
 

@@ -3,6 +3,7 @@ project(libv4l2cxx)
 
 set(CMAKE_CXX_STANDARD 17)
 
+SET(CMAKE_CXX_FLAGS -pthread)
 
 set(HEADER_FILES src/util_v4l2.h src/v4l2cxx.h)
 
