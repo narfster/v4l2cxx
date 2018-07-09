@@ -26,7 +26,9 @@
 ## ffmpeg commands
 
 Play video device
-> $ ffplay -f v4l2 -i /dev/video0 -video_size 640x480  -pixel_format yuyv422 -framerate 30
+'''
+$ ffplay -f v4l2 -i /dev/video0 -video_size 640x480  -pixel_format yuyv422 -framerate 30
+'''
 
 > $ ffplay -f v4l2 -i /dev/video0 -video_size 640x480  -pixel_format mjpeg
 
