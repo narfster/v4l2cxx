@@ -27,11 +27,11 @@
 ## ffmpeg commands
 
 #### Play video device
-ffplay -f v4l2 -i /dev/video0 -video_size 640x480  -pixel_format yuyv422 -framerate 30
+> ffplay -f v4l2 -i /dev/video0 -video_size 640x480  -pixel_format yuyv422 -framerate 30
 
-ffplay -f v4l2 -i /dev/video0 -video_size 640x480  -pixel_format mjpeg
+> ffplay -f v4l2 -i /dev/video0 -video_size 640x480  -pixel_format mjpeg
 
-ffplay -f v4l2 -i /dev/video0 -video_size 1280x720 -pixel_format mjpeg -framerate 30
+> ffplay -f v4l2 -i /dev/video0 -video_size 1280x720 -pixel_format mjpeg -framerate 30
 
 #### Pipe libv4l2 to ffplay, tell ffplay to use input (-i pipe:0 = stdin standrd input) 
 ./libv4l2cxx | ffplay -f rawvideo -i pipe:0 -video_size 640x480 -pixel_format rgb24 -framerate 60
