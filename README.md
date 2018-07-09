@@ -24,9 +24,9 @@
 
 
 ## ffmpeg commands
-```bash
+
 Play video device
-$ ffplay -f v4l2 -i /dev/video0 -video_size 640x480  -pixel_format yuyv422 -framerate 30
+> $ ffplay -f v4l2 -i /dev/video0 -video_size 640x480  -pixel_format yuyv422 -framerate 30
 $ ffplay -f v4l2 -i /dev/video0 -video_size 640x480  -pixel_format mjpeg
 $ ffplay -f v4l2 -i /dev/video0 -video_size 1280x720 -pixel_format mjpeg -framerate 30
 
@@ -46,4 +46,4 @@ v4l2-ctl --all
 Change control with to value
 $ v4l2-ctl -c <option>=<value>
 $ v4l2-ctl -d /dev/video1 -c exposure_absolute=100
-'''
+
