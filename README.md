@@ -47,8 +47,8 @@
 #### List controls for device
 > v4l2-ctl --all 
 
-#### Change control with to value
-> v4l2-ctl -c '<option>=<value>'
+#### Change control option to value
+> v4l2-ctl -c \<option>=\<value>
 
 > v4l2-ctl -d /dev/video1 -c exposure_absolute=100
 
