@@ -9,7 +9,7 @@
 
 
 ## Intro
-A simple C++ header only library to capture frames from a usb camera into a callback function for image processing.
+A simple C++ header library to capture frames from a usb camera into a callback function for image processing.
 
 
 ## How to use
