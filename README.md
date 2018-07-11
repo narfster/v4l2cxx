@@ -1,17 +1,16 @@
 # libv4l2cxx
 
 
-- [Design goals](#design-goals)
+- [Intro](#Intro)
 - [Integration](#integration)
 - [Examples](#examples)
   - [Pipe to ffplay](#pipe-to-ffplay)
 - [ffmpeg commands](#ffmpeg-commands)
 
 
-## Design goals
+## Intro
 
-- TODO write this section.
-
+Well, I am working on a project with lots of video processing elements. At one point in time i really just needed a callback fucntion to process frames arrving from a USB camera.  I found out that documnation / coding in c/c++ for newbies on how to accomplish this on linux was not a simple task.  my goal is to simplify.    
 
 ## Integration
 
