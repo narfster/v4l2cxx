@@ -9,8 +9,8 @@
 
 
 ## Intro
+A simple C++ header only library to capture frames from a usb camera into a callback function for image processing.
 
-I am working in the field of video processing where at the starting point I just needed a callback function to process arrving frames from a USB camera.  I found out that documnation / coding in c/c++ for to accomplish this on linux was not a simple task.  my goal to simplify.    
 
 ## Integration
 
