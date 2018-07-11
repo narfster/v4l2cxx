@@ -1,4 +1,4 @@
-# libv4l2cxx
+# Video4Linux2 C++ simple wrapper
 
 
 - [Intro](#Intro)
