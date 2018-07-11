@@ -10,7 +10,7 @@
 
 ## Intro
 
-Well, I am working on a project with lots of video processing elements. At one point in time i really just needed a callback fucntion to process frames arrving from a USB camera.  I found out that documnation / coding in c/c++ for newbies on how to accomplish this on linux was not a simple task.  my goal is to simplify.    
+I am working in the field of video processing where at the starting point I just needed a callback function to process arrving frames from a USB camera.  I found out that documnation / coding in c/c++ for to accomplish this on linux was not a simple task.  my goal to simplify.    
 
 ## Integration
 
