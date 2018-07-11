@@ -26,7 +26,8 @@ void callback_stdout_pipe(uint8_t *p_data, size_t len) {
 
 int main() {
     // a capture instance 
-    // device, resolution, pixel format , and callback function 
+    // device, resolution, pixel format , and callback function this should be known in advance you can use 
+    // v4l2-ctl command to figure that out.
     capture cap("/dev/video0", 640,480,pixel_format ::V4L2CXX_PIX_FMT_YUYV,callback_stdout_pipe);
     // start streaming - a blocking function.
     cap.run();
