@@ -12,13 +12,27 @@
 A simple C++ header only library to capture frames from a usb camera into a callback function for image processing.
 
 
-## Integration
+## How to use
 
-- TODO write this section.
+Run a simple hello camera to see how easy. no more v4l2 boilrplate code.
+```cpp
+void callback_stdout_pipe(uint8_t *p_data, size_t len) {
+    uint8_t outBuff[921600];
+    util_v4l2::raw_to_rgb(p_data, 0, outBuff, 921600, 640 * 480, 8);
+    fwrite(outBuff, 640*480*3, 1, stdout);
+}
 
+int main() {
+    // a capture instance 
+    // device, resolution, pixel format , and callback function 
+    capture cap("/dev/video0", 640,480,pixel_format ::V4L2CXX_PIX_FMT_YUYV,callback_stdout_pipe);
+    // start streaming - a blocking function.
+    cap.run();
+}
+```
 
 ## Examples
-
+- See example folder
 ### pipe to ffplay
 ./libv4l2cxx | ffplay -f rawvideo -i pipe:0 -video_size 640x480 -pixel_format rgb24 -framerate 60
 
