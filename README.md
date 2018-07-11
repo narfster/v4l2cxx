@@ -2,7 +2,7 @@
 
 
 - [Intro](#Intro)
-- [Integration](#integration)
+- [How to use](#How to use)
 - [Examples](#examples)
   - [Pipe to ffplay](#pipe-to-ffplay)
 - [ffmpeg commands](#ffmpeg-commands)
