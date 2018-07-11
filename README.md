@@ -35,7 +35,12 @@ int main() {
 ```
 
 ## Examples
-- See example folder
+- TODO ; cmake; See example folder
+
+## v4l2 Extension unit
+- TODO 
+- TODO example with LI-USB30-V034M
+
 ### pipe to ffplay
 ./libv4l2cxx | ffplay -f rawvideo -i pipe:0 -video_size 640x480 -pixel_format rgb24 -framerate 60
 
