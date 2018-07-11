@@ -16,6 +16,8 @@ A simple C++ header library to capture frames from a usb camera into a callback 
 
 Run a simple hello camera to see how easy. no more v4l2 boilrplate code.
 ```cpp
+// callback function to pipe out image to stdout 
+// later pipe to ffplay to display image
 void callback_stdout_pipe(uint8_t *p_data, size_t len) {
     uint8_t outBuff[921600];
     util_v4l2::raw_to_rgb(p_data, 0, outBuff, 921600, 640 * 480, 8);
