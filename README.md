@@ -1,8 +1,5 @@
 # Video4Linux2 C++ simple wrapper
 
---- test line
---- test line 2
-
 - [Intro](#Intro)
 - [How to use](#How-to-use)
 - [Examples](#examples)
